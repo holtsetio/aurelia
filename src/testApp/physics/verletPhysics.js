@@ -52,8 +52,6 @@ export class VerletPhysics {
 
     vertexQueue = [];
 
-    maxInfluencersPerVertex = 8;
-
     springQueue = [];
 
     benchmarks = [];
@@ -69,7 +67,8 @@ export class VerletPhysics {
         const id = this.vertexQueue.length;
         const value = { x, y, z, w: fixed ? 0 : 1 };
         const position = new THREE.Vector3(x, y, z);
-        const vertex = { id, value, position };
+        const springs = [];
+        const vertex = { id, value, position, springs };
         this.vertexQueue.push(vertex);
         return vertex;
     }
@@ -78,6 +77,8 @@ export class VerletPhysics {
             console.error("Can't add any more springs!");
         }
         const id = this.springQueue.length;
+        vertex0.springs.push({ id, sign: 1 });
+        vertex1.springs.push({ id, sign: -1 });
         this.springQueue.push({ id, vertex0, vertex1, stiffness, restLengthFactor });
         return id;
     }
@@ -86,19 +87,31 @@ export class VerletPhysics {
         this.springCount = this.springQueue.length;
         console.log(this.vertexCount + " vertices");
         console.log(this.springCount + " springs");
+        console.log(this.vertexQueue);
 
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);
-        this.influencerCountData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "influencerCount", true);
-        this.influencerData = new WgpuBuffer(this.vertexCount * this.maxInfluencersPerVertex, 'uint', 1, Uint32Array, "influencer", true);
-        this.influencerSignData = new WgpuBuffer(this.vertexCount * this.maxInfluencersPerVertex, 'float', 1, Float32Array, "influencerSign", true);
+        this.influencerPtrData = new WgpuBuffer(this.vertexCount, 'uvec2', 2, Uint32Array, "influencerptr", true); // x: ptr, y: length
+        this.influencerData = new WgpuBuffer(this.springCount * 2, 'uint', 1, Uint32Array, "influencer", true);
+        this.influencerSignData = new WgpuBuffer(this.springCount * 2, 'float', 1, Float32Array, "influencerSign", true);
+        let influencerPtr = 0;
         this.vertexQueue.forEach((v)=>{
-            const { id, value } = v;
+            const { id, value, springs } = v;
             this.positionData.array[id * 4 + 0] = value.x;
             this.positionData.array[id * 4 + 1] = value.y;
             this.positionData.array[id * 4 + 2] = value.z;
             this.positionData.array[id * 4 + 3] = value.w;
+
+            this.influencerPtrData.array[id * 2 + 0] = influencerPtr;
+            this.influencerPtrData.array[id * 2 + 1] = springs.length;
+            springs.forEach(s => {
+                this.influencerData.array[influencerPtr] = s.id;
+                this.influencerSignData.array[influencerPtr] = s.sign;
+                influencerPtr++;
+            });
         });
+        console.log(this.influencerPtrData.array);
+        console.log(influencerPtr, this.influencerData.array);
 
         this.springVertexData = new WgpuBuffer(this.springCount, 'uvec2', 2, Uint32Array, "springVertex", true);
         this.springParamsData = new WgpuBuffer(this.springCount, 'vec3', 3, Float32Array, "springParams", true); // x: stiffness, y: restLength, z: restLengthFactor
@@ -110,28 +123,7 @@ export class VerletPhysics {
             this.springParamsData.array[id * 3 + 0] = stiffness;
             this.springParamsData.array[id * 3 + 1] = 0;
             this.springParamsData.array[id * 3 + 2] = restLengthFactor;
-
-            //register influence to vertex0:
-            const v0ptr = this.influencerCountData.array[vertex0.id];
-            if (v0ptr >= this.maxInfluencersPerVertex) {
-                console.error(`Too many springs on Vertex ${vertex0.id}!`);
-            }
-            this.influencerCountData.array[vertex0.id]++;
-            this.influencerData.array[vertex0.id * this.maxInfluencersPerVertex + v0ptr] = id;
-            this.influencerSignData.array[vertex0.id * this.maxInfluencersPerVertex + v0ptr] = 1.0;
-
-            //register influence to vertex1:
-            const v1ptr = this.influencerCountData.array[vertex1.id];
-            if (v1ptr >= this.maxInfluencersPerVertex) {
-                console.error(`Too many springs on Vertex ${vertex1.id}!`);
-            }
-            this.influencerCountData.array[vertex1.id]++;
-            this.influencerData.array[vertex1.id * this.maxInfluencersPerVertex + v1ptr] = id;
-            this.influencerSignData.array[vertex1.id * this.maxInfluencersPerVertex + v1ptr] = -1;
         });
-
-        console.log(this.influencerCountData.array);
-        console.log(this.influencerData.array);
 
         const initSpringLengths = Fn(()=>{
             const vertices = this.springVertexData.readOnly.element(instanceIndex);
@@ -156,16 +148,17 @@ export class VerletPhysics {
             const force = dist.sub(restLength).mul(stiffness).div(dist).mul(delta).mul(0.5);
             this.springForceData.storage.element(instanceIndex).assign(force);
         })().compute(this.springCount);
+
         this.computeVertexForces = Fn(()=>{
-            const influencerCount = this.influencerCountData.readOnly.element(instanceIndex).toVar();
-            const ptr = instanceIndex.mul(this.maxInfluencersPerVertex).toVar();
+            const influencerPtr = this.influencerPtrData.readOnly.element(instanceIndex).toVar();
+            const ptrStart = influencerPtr.x.toVar();
+            const ptrEnd = ptrStart.add(influencerPtr.y).toVar();
             const force = this.forceData.storage.element(instanceIndex).toVec3().toVar();
             force.mulAssign(0.999);
-            Loop({ start: uint(0), end: influencerCount,  type: 'uint', condition: '<' }, ({ i })=>{
-                const springId = this.influencerData.readOnly.element(ptr);
-                const springSign = this.influencerSignData.readOnly.element(ptr);
+            Loop({ start: ptrStart, end: ptrEnd,  type: 'uint', condition: '<' }, ({ i })=>{
+                const springId = this.influencerData.readOnly.element(i);
+                const springSign = this.influencerSignData.readOnly.element(i);
                 force.addAssign(this.springForceData.storage.element(springId).mul(springSign));
-                ptr.addAssign(1);
             });
             force.y.addAssign(-0.0001);
             this.forceData.storage.element(instanceIndex).assign(force);
