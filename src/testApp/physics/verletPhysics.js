@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { Fn, If, Loop, uint, instanceIndex } from "three/webgpu";
+import { Fn, If, Loop, select, uint, instanceIndex } from "three/webgpu";
 
 class WgpuBuffer {
     length = 0;
@@ -10,7 +10,6 @@ class WgpuBuffer {
     array = null;
     buffer = null;
     storageObject = null;
-    readOnlyStorageObject = null;
     attributeObject = null;
     constructor(_length, _wgputype, _itemsize, _typeclass = Float32Array, _name = "", instanced = false) {
         this.length = _length;
@@ -35,12 +34,15 @@ class WgpuBuffer {
         }
         return this.storageObject;
     }
-    get readOnly() {
-        return this.storage;
+    toReadOnly() {
+        this.storage.toReadOnly();
+    }
+    toReadWrite() {
+        this.storage.setAccess("storage");
     }
     get attribute() {
         if (!this.attributeObject) {
-            this.attributeObject = this.readOnly.toAttribute();
+            this.attributeObject = this.storage.toAttribute();
         }
         return this.attributeObject;
     }
@@ -68,7 +70,7 @@ export class VerletPhysics {
         const value = { x, y, z, w: fixed ? 0 : 1 };
         const position = new THREE.Vector3(x, y, z);
         const springs = [];
-        const vertex = { id, value, position, springs };
+        const vertex = { id, value, position, springs, fixed };
         this.vertexQueue.push(vertex);
         return vertex;
     }
@@ -92,82 +94,94 @@ export class VerletPhysics {
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);
         this.influencerPtrData = new WgpuBuffer(this.vertexCount, 'uvec2', 2, Uint32Array, "influencerptr", true); // x: ptr, y: length
-        this.influencerData = new WgpuBuffer(this.springCount * 2, 'uint', 1, Uint32Array, "influencer", true);
-        this.influencerSignData = new WgpuBuffer(this.springCount * 2, 'float', 1, Float32Array, "influencerSign", true);
+        this.influencerData = new WgpuBuffer(this.springCount * 2, 'int', 1, Int32Array, "influencer", true);
+        //this.influencerSignData = new WgpuBuffer(this.springCount * 2, 'float', 1, Float32Array, "influencerSign", true);
         let influencerPtr = 0;
-        this.vertexQueue.forEach((v)=>{
-            const { id, value, springs } = v;
+        this.vertexQueue.forEach((v)=> {
+            const {id, value, springs, fixed} = v;
             this.positionData.array[id * 4 + 0] = value.x;
             this.positionData.array[id * 4 + 1] = value.y;
             this.positionData.array[id * 4 + 2] = value.z;
             this.positionData.array[id * 4 + 3] = value.w;
 
             this.influencerPtrData.array[id * 2 + 0] = influencerPtr;
-            this.influencerPtrData.array[id * 2 + 1] = springs.length;
-            springs.forEach(s => {
-                this.influencerData.array[influencerPtr] = s.id;
-                this.influencerSignData.array[influencerPtr] = s.sign;
-                influencerPtr++;
-            });
+            if (!fixed) {
+                this.influencerPtrData.array[id * 2 + 1] = springs.length;
+                springs.forEach(s => {
+                    this.influencerData.array[influencerPtr] = (s.id+1) * s.sign;
+                    //this.influencerData.array[influencerPtr * 2 + 1] = s.sign > 0 ? 1 : 0;
+                    //this.influencerSignData.array[influencerPtr] = s.sign;
+                    influencerPtr++;
+                });
+            }
         });
+        this.influencerPtrData.toReadOnly();
+        this.influencerData.toReadOnly();
         console.log(this.influencerPtrData.array);
         console.log(influencerPtr, this.influencerData.array);
 
         this.springVertexData = new WgpuBuffer(this.springCount, 'uvec2', 2, Uint32Array, "springVertex", true);
-        this.springParamsData = new WgpuBuffer(this.springCount, 'vec3', 3, Float32Array, "springParams", true); // x: stiffness, y: restLength, z: restLengthFactor
+        this.springParamsData = new WgpuBuffer(this.springCount, 'vec2', 2, Float32Array, "springParams", true); // x: stiffness, y: restLength,
+        this.springLengthFactorData = new WgpuBuffer(this.springCount, 'float', 1, Float32Array, "springLengthFactor", true); // restLengthFactor
         this.springForceData = new WgpuBuffer(this.springCount, 'vec3', 3, Float32Array, "springForce", true);
         this.springQueue.forEach((spring)=>{
             const { id, vertex0, vertex1, stiffness, restLengthFactor } = spring;
             this.springVertexData.array[id * 2 + 0] = vertex0.id;
             this.springVertexData.array[id * 2 + 1] = vertex1.id;
-            this.springParamsData.array[id * 3 + 0] = stiffness;
-            this.springParamsData.array[id * 3 + 1] = 0;
-            this.springParamsData.array[id * 3 + 2] = restLengthFactor;
+            this.springParamsData.array[id * 2 + 0] = stiffness;
+            this.springParamsData.array[id * 2 + 1] = 0;
+            this.springLengthFactorData.array[id] = restLengthFactor;
         });
 
         const initSpringLengths = Fn(()=>{
-            const vertices = this.springVertexData.readOnly.element(instanceIndex);
-            const v0 = this.positionData.readOnly.element(vertices.x).xyz;
-            const v1 = this.positionData.readOnly.element(vertices.y).xyz;
+            const vertices = this.springVertexData.storage.element(instanceIndex);
+            const v0 = this.positionData.storage.element(vertices.x).xyz;
+            const v1 = this.positionData.storage.element(vertices.y).xyz;
             const params = this.springParamsData.storage.element(instanceIndex);
+            const restLengthFactor = this.springLengthFactorData.storage.element(instanceIndex);
             const restLength = params.y;
-            const restLengthFactor = params.z;
             restLength.assign(v0.distance(v1).mul(restLengthFactor));
         })().compute(this.springCount);
         await this.renderer.computeAsync(initSpringLengths);
 
+        this.springVertexData.toReadOnly();
+        this.springParamsData.toReadOnly();
+        this.springLengthFactorData.toReadOnly();
+
         this.computeSpringForces = Fn(()=>{
-            const vertices = this.springVertexData.readOnly.element(instanceIndex);
-            const v0 = this.positionData.readOnly.element(vertices.x).toVec3();
-            const v1 = this.positionData.readOnly.element(vertices.y).toVec3();
-            const params = this.springParamsData.readOnly.element(instanceIndex);
+            const vertices = this.springVertexData.storage.element(instanceIndex);
+            const v0 = this.positionData.storage.element(vertices.x).toVec3();
+            const v1 = this.positionData.storage.element(vertices.y).toVec3();
+            const params = this.springParamsData.storage.element(instanceIndex);
             const stiffness = params.x;
             const restLength = params.y;
-            const delta = v1.sub(v0);
-            const dist = delta.length().max(0.000001);
+            const delta = v1.sub(v0).toVar();
+            const dist = delta.length().max(0.000001).toVar();
             const force = dist.sub(restLength).mul(stiffness).div(dist).mul(delta).mul(0.5);
             this.springForceData.storage.element(instanceIndex).assign(force);
         })().compute(this.springCount);
 
         this.computeVertexForces = Fn(()=>{
-            const influencerPtr = this.influencerPtrData.readOnly.element(instanceIndex).toVar();
+            const influencerPtr = this.influencerPtrData.storage.element(instanceIndex).toVar();
             const ptrStart = influencerPtr.x.toVar();
             const ptrEnd = ptrStart.add(influencerPtr.y).toVar();
-            const force = this.forceData.storage.element(instanceIndex).toVec3().toVar();
-            force.mulAssign(0.999);
+            const force = this.forceData.storage.element(instanceIndex).toVar();
+            force.mulAssign(0.997);
             Loop({ start: ptrStart, end: ptrEnd,  type: 'uint', condition: '<' }, ({ i })=>{
-                const springId = this.influencerData.readOnly.element(i);
-                const springSign = this.influencerSignData.readOnly.element(i);
-                force.addAssign(this.springForceData.storage.element(springId).mul(springSign));
+                const springPtr = this.influencerData.storage.element(i);
+                //const springSign = this.influencerSignData.readOnly.element(i);
+                const springForce = this.springForceData.storage.element(springPtr.abs().sub(1));
+                const factor = select(springPtr.greaterThan(0), 1.0, -1.0);
+                force.addAssign(springForce.mul(factor));
             });
-            force.y.addAssign(-0.0001);
+            force.y.addAssign(-0.0002);
             this.forceData.storage.element(instanceIndex).assign(force);
         })().compute(this.vertexCount);
 
         this.computeAddForces = Fn(()=>{
             const position = this.positionData.storage.element(instanceIndex);
             If(position.w.greaterThan(0.5), ()=>{
-                const force = this.forceData.readOnly.element(instanceIndex);
+                const force = this.forceData.storage.element(instanceIndex);
                 position.addAssign(force);
             });
         })().compute(this.vertexCount);
@@ -208,15 +222,15 @@ export class VerletPhysics {
         }
 
         const start = performance.now();
-        for(let i = 0; i < 100; i++){
-            this.springForceData.storage.setAccess('storage');
+        this.positionData.toReadWrite();
+        for(let i = 0; i < 10; i++){
             await this.renderer.computeAsync(this.computeSpringForces);
-            this.forceData.storage.setAccess('storage');
             await this.renderer.computeAsync(this.computeVertexForces);
-            this.positionData.storage.setAccess('storage');
             await this.renderer.computeAsync(this.computeAddForces);
         }
+        this.positionData.toReadOnly();
 
+        /*
         const r3 = await this.positionData.read(this.renderer);
         const duration = performance.now() - start;
         this.benchmarks.push(duration);
@@ -228,7 +242,7 @@ export class VerletPhysics {
             total /= this.benchmarks.length;
             this.benchmarks = [];
             console.log(total + " ms");
-        }
+        }*/
         /*console.log("Frame");
             const r1 = await this.springForceData.read(this.renderer);
             const r2 = await this.forceData.read(this.renderer);

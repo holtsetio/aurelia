@@ -10,6 +10,7 @@ import { Lights } from "./lights";
 import { conf } from "./conf";
 import { VerletPhysics } from "./physics/verletPhysics";
 import { VertexVisualizer } from "./physics/vertexVisualizer";
+import {SpringVisualizer} from "./physics/springVisualizer";
 
 class TestApp {
     renderer = null;
@@ -64,12 +65,12 @@ class TestApp {
             metalness: 0.9,
             roughness: 0.4
         }));
-        this.scene.add(this.cube);
+        //this.scene.add(this.cube);
 
         this.physics = new VerletPhysics(this.renderer);
 
         const w = 1000;
-        const h = 1000;
+        const h = 100;
         const verletVertices = new Array(w).fill(0).map((i)=>{
             return new Array(h).fill(0);
         });
@@ -81,14 +82,19 @@ class TestApp {
         }
         for(let x = 0; x < w; x++) {
             for(let y = 0; y < h; y++) {
-                if (x > 0) {
-                    this.physics.addSpring(verletVertices[x][y], verletVertices[x - 1][y], 0.52, 1);
+                for (let o=1; o<=2; o++) {
+                    if (x >= o) {
+                        this.physics.addSpring(verletVertices[x][y], verletVertices[x - o][y], 0.3, 1);
+                    }
                 }
                 if (y > 0) {
-                    this.physics.addSpring(verletVertices[x][y], verletVertices[x][y - 1], 0.52, 1);
+                    this.physics.addSpring(verletVertices[x][y], verletVertices[x][y - 1], 0.3, 1);
+                    if (y > 1) {
+                        this.physics.addSpring(verletVertices[x][y], verletVertices[x][y - 2], 0.3, 1);
+                    }
                     if (x > 0) {
-                        this.physics.addSpring(verletVertices[x][y], verletVertices[x - 1][y - 1], 0.52, 1);
-                        this.physics.addSpring(verletVertices[x - 1][y], verletVertices[x][y - 1], 0.52, 1);
+                        this.physics.addSpring(verletVertices[x][y], verletVertices[x - 1][y - 1], 0.3, 1);
+                        this.physics.addSpring(verletVertices[x - 1][y], verletVertices[x][y - 1], 0.3, 1);
                     }
                 }
             }
@@ -97,6 +103,8 @@ class TestApp {
         await this.physics.bake();
         this.vertexVisualizer = new VertexVisualizer(this.physics);
         this.scene.add(this.vertexVisualizer.object);
+        this.springVisualizer = new SpringVisualizer(this.physics);
+        this.scene.add(this.springVisualizer.object);
 
         /*this.time = 0;
         this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.01, 100);

@@ -15,7 +15,6 @@ export class VertexVisualizer {
         this.object = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), this.material);
         this.object.count = this.count;
         this.object.frustumCulled = false;
-        console.log(new THREE.MeshStandardNodeMaterial());
     }
     update(interval, elapsed) {}
 }
