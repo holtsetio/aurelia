@@ -10,8 +10,6 @@ export class VertexVisualizer {
         this.count = physics.vertexCount;
         this.material = new THREE.SpriteNodeMaterial();
         this.material.positionNode = this.physics.positionData.attribute;
-        this.material.depthWrite = false;
-        this.material.depthTest = true;
         this.object = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), this.material);
         this.object.count = this.count;
         this.object.frustumCulled = false;

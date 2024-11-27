@@ -20,8 +20,6 @@ export class SpringVisualizer {
             const ptr = select(this.vertexIndexAttribute.equal(0), vertices.x, vertices.y);
             return this.physics.positionData.storage.element(ptr).xyz;
         } )();
-        this.material.depthWrite = false;
-        this.material.depthTest = true;
 
         this.geometry = new THREE.InstancedBufferGeometry();
         this.geometry.setAttribute("position", this.positionBuffer);

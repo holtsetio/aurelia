@@ -1,52 +1,7 @@
 import * as THREE from "three/webgpu";
 import { Fn, If, Loop, select, uint, instanceIndex } from "three/webgpu";
+import {WgpuBuffer} from "../common/WgpuBuffer";
 
-class WgpuBuffer {
-    length = 0;
-    name = "";
-    wgputype = "";
-    itemsize = 0;
-    typeclass = null;
-    array = null;
-    buffer = null;
-    storageObject = null;
-    attributeObject = null;
-    constructor(_length, _wgputype, _itemsize, _typeclass = Float32Array, _name = "", instanced = false) {
-        this.length = _length;
-        this.name = _name;
-        this.wgputype = _wgputype;
-        this.itemsize = _itemsize;
-        this.typeclass = _typeclass;
-        this.array = new this.typeclass(this.length * this.itemsize);
-        if (instanced) {
-            this.buffer = new THREE.StorageInstancedBufferAttribute(this.array, this.itemsize, this.typeclass);
-        } else {
-            this.buffer = new THREE.StorageBufferAttribute(this.array, this.itemsize, this.typeclass);
-        }
-        this.buffer.name = this.name;
-    }
-    async read(renderer) {
-        return new this.typeclass(await renderer.getArrayBufferAsync(this.buffer));
-    }
-    get storage() {
-        if (!this.storageObject) {
-            this.storageObject = THREE.storage(this.buffer, this.wgputype, this.length);
-        }
-        return this.storageObject;
-    }
-    toReadOnly() {
-        this.storage.toReadOnly();
-    }
-    toReadWrite() {
-        this.storage.setAccess("storage");
-    }
-    get attribute() {
-        if (!this.attributeObject) {
-            this.attributeObject = this.storage.toAttribute();
-        }
-        return this.attributeObject;
-    }
-}
 export class VerletPhysics {
     renderer = null;
 
@@ -62,15 +17,15 @@ export class VerletPhysics {
         this.renderer = renderer;
     }
 
-    addVertex(x, y, z, fixed = false) {
+    addVertex(position, fixed = false) {
         if (this.isBaked) {
             console.error("Can't add any more vertices!");
         }
+        const { x,y,z } = position;
         const id = this.vertexQueue.length;
         const value = { x, y, z, w: fixed ? 0 : 1 };
-        const position = new THREE.Vector3(x, y, z);
         const springs = [];
-        const vertex = { id, value, position, springs, fixed };
+        const vertex = { id, value, springs, fixed };
         this.vertexQueue.push(vertex);
         return vertex;
     }
@@ -89,7 +44,7 @@ export class VerletPhysics {
         this.springCount = this.springQueue.length;
         console.log(this.vertexCount + " vertices");
         console.log(this.springCount + " springs");
-        console.log(this.vertexQueue);
+        //console.log(this.vertexQueue);
 
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);
