@@ -18,16 +18,21 @@ export class Medusa {
         this.bridge = new MedusaVerletBridge(this.physics, this);
         this.createGeometry();
         this.physics.addObject(this);
+        this.updatePosition(0,0);
     }
 
     addVertex(position, fixed) {
-        const vertex = this.physics.addVertex(position, fixed);
+        const vertex = this.physics.addVertex(position, false);
 
         const width = Math.sqrt(position.x*position.x+position.z*position.z);
         const zenith = Math.atan2(width, position.y) / (Math.PI * 0.5);
         const azimuth = Math.atan2(position.x, position.z);
 
-        this.bridge.registerVertex(vertex, zenith, azimuth, new THREE.Vector3(0), fixed);
+        const offset = position.clone().multiplyScalar(0.3);
+        const muscleVertex = this.physics.addVertex(position, true);
+        this.bridge.registerVertex(vertex, zenith, azimuth, new THREE.Vector3(0), false);
+        this.bridge.registerVertex(muscleVertex, zenith, azimuth, offset, true);
+        this.physics.addSpring(vertex, muscleVertex, 0.05, 1);
         return vertex;
     }
 
@@ -97,6 +102,8 @@ export class Medusa {
         }
 
         const verletTriangleRows = [];
+        const springStrength = 0.05;
+        const springLengthFactor = 0.7;
         for (let y = 1; y<=subdivisions; y++) {
             const verletTriangleRow = [];
             for (let f=0; f<5; f++) {
@@ -106,10 +113,10 @@ export class Medusa {
                     const v2 = getVertexFromTopFace(f, y, x+1);
                     verletTriangleRow.push([v0,v1,v2]);
                     if (x > 0) {
-                        this.physics.addSpring(v0, v1, 0.3, 1);
+                        this.physics.addSpring(v0, v1, springStrength, springLengthFactor);
                     }
-                    this.physics.addSpring(v0, v2, 0.3, 1);
-                    this.physics.addSpring(v1, v2, 0.3, 1);
+                    this.physics.addSpring(v0, v2, springStrength, springLengthFactor);
+                    this.physics.addSpring(v1, v2, springStrength, springLengthFactor);
                 }
             }
             verletTriangleRows.push(verletTriangleRow);
@@ -123,18 +130,18 @@ export class Medusa {
                     const v1 = getVertexFromBottomDownlookingFace(f, y-1, x+1);
                     const v2 = getVertexFromBottomDownlookingFace(f, y, x+1);
                     verletTriangleRow.push([v0,v1,v2]);
-                    this.physics.addSpring(v0, v1, 0.3, 1);
-                    this.physics.addSpring(v0, v2, 0.3, 1);
-                    this.physics.addSpring(v1, v2, 0.3, 1);
+                    this.physics.addSpring(v0, v1, springStrength, springLengthFactor);
+                    this.physics.addSpring(v0, v2, springStrength, springLengthFactor);
+                    this.physics.addSpring(v1, v2, springStrength, springLengthFactor);
                 }
                 for (let x=0; x < y; x++) {
                     const v0 = getVertexFromBottomUplookingFace(f, y, x);
                     const v1 = getVertexFromBottomUplookingFace(f, y-1, x);
                     const v2 = getVertexFromBottomUplookingFace(f, y, x+1);
                     verletTriangleRow.push([v0,v1,v2]);
-                    this.physics.addSpring(v0, v1, 0.3, 1);
-                    this.physics.addSpring(v0, v2, 0.3, 1);
-                    this.physics.addSpring(v1, v2, 0.3, 1);
+                    this.physics.addSpring(v0, v1, springStrength, springLengthFactor);
+                    this.physics.addSpring(v0, v2, springStrength, springLengthFactor);
+                    this.physics.addSpring(v1, v2, springStrength, springLengthFactor);
                 }
             }
             verletTriangleRows.push(verletTriangleRow);

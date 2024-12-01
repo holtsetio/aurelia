@@ -139,7 +139,7 @@ export class VerletPhysics {
                 const factor = select(springPtr.greaterThan(0), 1.0, -1.0);
                 force.addAssign(springForce.mul(factor));
             });
-            force.y.addAssign(-0.0002);
+            //force.y.addAssign(-0.0002);
             this.forceData.buffer.element(instanceIndex).assign(force);
         })().compute(this.vertexCount);
 
@@ -187,7 +187,7 @@ export class VerletPhysics {
         }
 
         const start = performance.now();
-        const steps = 10;
+        const steps = 2;
         for(let i = 0; i < steps; i++){
             const dt = interval / steps;
             this.time += dt;

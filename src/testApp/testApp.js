@@ -62,46 +62,7 @@ class TestApp {
 
         await progressCallback(0.5);
 
-        this.cube = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({
-            metalness: 0.9,
-            roughness: 0.4
-        }));
-        //this.scene.add(this.cube);
-
         this.physics = new VerletPhysics(this.renderer);
-
-        /*
-        const w = 1000;
-        const h = 100;
-        const verletVertices = new Array(w).fill(0).map((i)=>{
-            return new Array(h).fill(0);
-        });
-
-        for(let x = 0; x < w; x++) {
-            for(let y = 0; y < h; y++) {
-                verletVertices[x][y] = this.physics.addVertex(x * 0.05, y * 0.05, y * 0.03, y === 0);
-            }
-        }
-        for(let x = 0; x < w; x++) {
-            for(let y = 0; y < h; y++) {
-                for (let o=1; o<=2; o++) {
-                    if (x >= o) {
-                        this.physics.addSpring(verletVertices[x][y], verletVertices[x - o][y], 0.3, 1);
-                    }
-                }
-                if (y > 0) {
-                    this.physics.addSpring(verletVertices[x][y], verletVertices[x][y - 1], 0.3, 1);
-                    if (y > 1) {
-                        this.physics.addSpring(verletVertices[x][y], verletVertices[x][y - 2], 0.3, 1);
-                    }
-                    if (x > 0) {
-                        this.physics.addSpring(verletVertices[x][y], verletVertices[x - 1][y - 1], 0.3, 1);
-                        this.physics.addSpring(verletVertices[x - 1][y], verletVertices[x][y - 1], 0.3, 1);
-                    }
-                }
-            }
-        }
-        */
 
         for (let i=0; i<10; i++) {
             const medusa = new Medusa(this.renderer, this.physics);

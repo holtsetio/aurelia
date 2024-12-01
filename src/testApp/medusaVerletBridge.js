@@ -78,7 +78,7 @@ export class MedusaVerletBridge {
             result.y.assign(cos(polarAngle).mul(yr).add(yoffset));
             result.z.assign(cos(angle).mul(result.x));
             result.x.assign(sin(angle).mul(result.x));
-            return this.uniforms.matrix.mul(result).xyz;
+            return result;
         };
 
         this.updatePositions = Fn(()=>{
@@ -86,11 +86,15 @@ export class MedusaVerletBridge {
                 const vertexId = this.vertexIdData.buffer.element(instanceIndex);
                 const params = this.paramsData.buffer.element(instanceIndex);
                 const offset = this.offsetData.buffer.element(instanceIndex);
-                const result = getBellPosition(params.x, params.y).add(offset);
+                const result = this.uniforms.matrix.mul(getBellPosition(params.x, params.y).add(offset)).xyz;
                 this.physics.positionData.buffer.element(vertexId).xyz.assign(result);
             });
         })().compute(this.vertexCount);
         await this.physics.renderer.computeAsync(this.updatePositions);
+
+        this.uniforms.vertexCount.value = this.fixedNum;
+        this.updatePositions.count = this.fixedNum;
+        this.updatePositions.updateDispatchCount();
 
         this.isBaked = true;
 
