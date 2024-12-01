@@ -1,4 +1,5 @@
 import * as THREE from "three/webgpu";
+import { Fn, instanceIndex } from "three/tsl";
 
 export class VertexVisualizer {
     physics = null;
@@ -9,7 +10,9 @@ export class VertexVisualizer {
         this.physics = physics;
         this.count = physics.vertexCount;
         this.material = new THREE.SpriteNodeMaterial();
-        this.material.positionNode = this.physics.positionData.attribute;
+        this.material.positionNode = Fn(() => {
+            return this.physics.positionData.buffer.element(instanceIndex);
+        })();
         this.object = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), this.material);
         this.object.count = this.count;
         this.object.frustumCulled = false;

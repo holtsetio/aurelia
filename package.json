@@ -22,6 +22,6 @@
   "keywords": [],
   "alias": {
     "three/webgpu": "three/src/Three.WebGPU.js",
-    "three/tsl": "three/src/Three.WebGPU.js"
+    "three/tsl": "three/src/Three.TSL.js"
   }
 }
