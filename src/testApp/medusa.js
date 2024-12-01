@@ -147,6 +147,47 @@ export class Medusa {
             verletTriangleRows.push(verletTriangleRow);
         }
 
+        const bellMarginVertexRows = [];
+        bellMarginVertexRows.push(vertexRows[vertexRows.length - 1]);
+        const verticesPerMarginRow = subdivisions * 5;
+        for (let i=1; i<8; i++) {
+            const vertexRow = [];
+            for (let x=0; x < verticesPerMarginRow; x++) {
+
+                const refVertex = bellMarginVertexRows[0][x];
+                const azimuth = Math.atan2(refVertex.value.x, refVertex.value.z) + (((i%2) * 0.5) / verticesPerMarginRow) * Math.PI * 2;
+
+                const zenith = 1;
+                //const azimuth = ((x + (i%2) * 0.5) / verticesPerMarginRow) * Math.PI * 2;
+                const offset = new THREE.Vector3(0,-i*0.05,0);
+
+                const vertex = this.physics.addVertex(new THREE.Vector3(), false);
+                this.bridge.registerVertex(vertex, zenith, azimuth, offset, false);
+                //this.physics.addSpring(vertex, muscleVertex, 0.05, 1);
+                vertexRow.push(vertex);
+            }
+            vertexRow.push(vertexRow[0]);
+            bellMarginVertexRows.push(vertexRow);
+        }
+        for (let i=1; i<8; i++) {
+            for (let x=0; x < verticesPerMarginRow; x++) {
+                const v0 = bellMarginVertexRows[i][x];
+                const v1 = bellMarginVertexRows[i-1][x + i%2];
+                const v2 = bellMarginVertexRows[i][x+1];
+                this.physics.addSpring(v0, v1, 0.2, 1);
+                this.physics.addSpring(v1, v2, 0.2, 1);
+                this.physics.addSpring(v0, v2, 0.2, 1.0);
+                if (i === 1) {
+                    const v3 = vertexRows[vertexRows.length - 2][x];
+                    this.physics.addSpring(v0, v3, 0.2, 1);
+                }
+                if (i > 1) {
+                    const v3 = bellMarginVertexRows[i-2][x];
+                    this.physics.addSpring(v0, v3, 0.2, 1);
+                }
+            }
+        }
+        console.log(vertexRows);
     }
 
     async init() {

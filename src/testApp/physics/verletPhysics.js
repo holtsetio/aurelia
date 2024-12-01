@@ -131,7 +131,7 @@ export class VerletPhysics {
             const ptrStart = influencerPtr.x.toVar();
             const ptrEnd = ptrStart.add(influencerPtr.y).toVar();
             const force = this.forceData.buffer.element(instanceIndex).toVar();
-            force.mulAssign(0.997);
+            force.mulAssign(0.995);
             Loop({ start: ptrStart, end: ptrEnd,  type: 'uint', condition: '<' }, ({ i })=>{
                 const springPtr = this.influencerData.buffer.element(i);
                 //const springSign = this.influencerSignData.readOnly.element(i);

@@ -67,7 +67,7 @@ export class MedusaVerletBridge {
         }*/
         const getBellPosition = (t, angle) => {
             const phase = this.physics.uniforms.time.mul(0.2).mul(Math.PI*2).toVar();
-            const yoffset = 0.0; //sin(phase.add(3.0)).mul(0.5);
+            const yoffset = sin(phase.add(3.0)).mul(0.5);
             phase.subAssign(mix(0.0, t.mul(0.95), t));
             phase.addAssign(Math.PI * 0.5);
             const xr = sin(phase).mul(0.3).add(1.3);
