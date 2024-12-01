@@ -103,8 +103,11 @@ class TestApp {
         }
         */
 
-        this.medusa = new Medusa(this.renderer, this.physics);
-        this.scene.add(this.medusa.object);
+        for (let i=0; i<10; i++) {
+            const medusa = new Medusa(this.renderer, this.physics);
+            this.scene.add(medusa.object);
+        }
+
 
         await this.physics.bake();
         this.vertexVisualizer = new VertexVisualizer(this.physics);

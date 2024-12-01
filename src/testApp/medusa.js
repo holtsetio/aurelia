@@ -1,27 +1,34 @@
 import * as THREE from "three/webgpu";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import Stats from "three/examples/jsm/libs/stats.module";
 
-/*import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer"*/
-
-import { Lights } from "./lights";
-import { conf } from "./conf";
-import { VerletPhysics } from "./physics/verletPhysics";
-import { VertexVisualizer } from "./physics/vertexVisualizer";
-import {SpringVisualizer} from "./physics/springVisualizer";
+import {MedusaVerletBridge} from "./medusaVerletBridge";
+import {noise3D} from "../testApp/common/noise";
 
 export class Medusa {
     renderer = null;
     physics = null;
     object = null;
+    bridge = null;
+    noiseSeed = 0;
 
     constructor(renderer, physics){
         this.renderer = renderer;
         this.physics = physics;
         this.object = new THREE.Object3D();
+        this.noiseSeed = Math.random() * 100.0;
+        this.bridge = new MedusaVerletBridge(this.physics, this);
         this.createGeometry();
+        this.physics.addObject(this);
+    }
+
+    addVertex(position, fixed) {
+        const vertex = this.physics.addVertex(position, fixed);
+
+        const width = Math.sqrt(position.x*position.x+position.z*position.z);
+        const zenith = Math.atan2(width, position.y) / (Math.PI * 0.5);
+        const azimuth = Math.atan2(position.x, position.z);
+
+        this.bridge.registerVertex(vertex, zenith, azimuth, new THREE.Vector3(0), fixed);
+        return vertex;
     }
 
     createGeometry() {
@@ -47,7 +54,7 @@ export class Medusa {
         //icoVertexRowBottom.forEach(v => { this.physics.addVertex(v, true); });
 
         const vertexRows = [];
-        vertexRows.push([this.physics.addVertex(icoVertexTop.clone().normalize(), true)]);
+        vertexRows.push([this.addVertex(icoVertexTop.clone().normalize(), true)]);
         for (let y=1; y<=subdivisions; y++) {
             const vertexRow = [];
             for (let f=0; f<5; f++) {
@@ -55,7 +62,7 @@ export class Medusa {
                 const e1 = icoVertexTop.clone().lerp(icoVertexRowTop[f+1], y/subdivisions);
                 for (let x=0; x<y; x++) {
                     const pos = e0.clone().lerp(e1, x/y).normalize();
-                    vertexRow.push(this.physics.addVertex(pos, true));
+                    vertexRow.push(this.addVertex(pos, true));
                 }
             }
             vertexRow.push(vertexRow[0]);
@@ -69,11 +76,11 @@ export class Medusa {
                 const e2 = icoVertexRowTop[f+1].clone().lerp(icoVertexRowBottom[f+1], y/subdivisions);
                 for (let x=0; x < subdivisions-y; x++) {
                     const pos = e0.clone().lerp(e1, x/(subdivisions-y)).normalize();
-                    vertexRow.push(this.physics.addVertex(pos, true));
+                    vertexRow.push(this.addVertex(pos, true));
                 }
                 for (let x=0; x < y; x++) {
                     const pos = e1.clone().lerp(e2, x/y).normalize();
-                    vertexRow.push(this.physics.addVertex(pos, true));
+                    vertexRow.push(this.addVertex(pos, true));
                 }
             }
             vertexRow.push(vertexRow[0]);
@@ -142,7 +149,25 @@ export class Medusa {
     resize(width, height) {
     }
 
+    async bake() {
+        return await this.bridge.bake();
+    }
+
+    updatePosition(delta, elapsed) {
+        const time = elapsed * 0.2;
+        const rotX = noise3D(this.noiseSeed, 13.37, time * 0.01) * Math.PI;
+        const rotY = noise3D(this.noiseSeed, 12.37, time * 0.01) * Math.PI * 0.1;
+        const rotZ = noise3D(this.noiseSeed, 11.37, time * 0.01) * Math.PI;
+        this.object.rotation.set(rotX,rotY,rotZ, "XZY");
+        const offset = new THREE.Vector3(0,delta,0).applyEuler(this.object.rotation);
+        this.object.position.add(offset);
+        this.object.updateMatrix();
+    }
+
     async update(delta, elapsed) {
+        this.updatePosition(delta, elapsed);
+        return await this.bridge.update();
+
 
     }
 }

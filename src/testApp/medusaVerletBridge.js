@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { Fn } from "three/tsl";
+import {cos, float, Fn, instanceIndex, mix, sin, vec3, uniform, If } from "three/tsl";
 import { WgpuBuffer } from "./common/WgpuBuffer"
 
 export class MedusaVerletBridge {
@@ -10,6 +10,8 @@ export class MedusaVerletBridge {
     isBaked = false;
 
     vertexQueue = [];
+
+    uniforms = {};
 
     constructor(physics, medusa) {
         this.physics = physics;
@@ -24,7 +26,7 @@ export class MedusaVerletBridge {
         this.vertexQueue.push({ id, zenith, azimuth, offset, fixed });
     }
 
-    bake() {
+    async bake() {
         this.vertexQueue = this.vertexQueue.sort((x, y) => Number(y.fixed) - Number(x.fixed));
         this.fixedNum = this.vertexQueue.findIndex(v => !v.fixed);
 
@@ -32,6 +34,8 @@ export class MedusaVerletBridge {
         this.vertexIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "vertexId", true);
         this.paramsData = new WgpuBuffer(this.vertexCount, 'vec2', 2, Float32Array, "params", true); // x: zenith, y: azimuth
         this.offsetData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "offset", true);
+        this.uniforms.matrix = uniform(this.medusa.object.matrix, "mat4");
+        this.uniforms.vertexCount = uniform(this.vertexCount, "uint");
 
         this.vertexQueue.forEach((v, index) => {
             const { id, zenith, azimuth, offset } = v;
@@ -43,6 +47,52 @@ export class MedusaVerletBridge {
             this.offsetData.array[index * 3 + 2] = offset.z;
         });
 
+        /*
+        vec3 getBellPosition(float t, float angle) {
+            float x, y, z;
+            float phase = uTime * 3.14159 * 2.0;
+            float yoffset = sin(3.0 + phase) * 0.5;
+            phase -= mix(0.0, t * 0.95, t);
+            phase += 3.14159 * 0.5;
+            float xr = 1.3 + sin(0.0 + phase) * 0.3;
+            float yr = 1.0; // + sin(2.0 + phase) * 0.2;
+            float polarAngle = t * 3.14159 * (0.5 + sin(3.0 + phase) * 0.15 + sin(angle * 16.0) * 0.01);
+            x = sin(polarAngle) * xr;
+            y = cos(polarAngle) * yr;
+            y += yoffset;
+
+            z = cos(angle) * x;
+            x = sin(angle) * x;
+            return vec3(x,y,z);
+        }*/
+        const getBellPosition = (t, angle) => {
+            const phase = this.physics.uniforms.time.mul(0.2).mul(Math.PI*2).toVar();
+            const yoffset = 0.0; //sin(phase.add(3.0)).mul(0.5);
+            phase.subAssign(mix(0.0, t.mul(0.95), t));
+            phase.addAssign(Math.PI * 0.5);
+            const xr = sin(phase).mul(0.3).add(1.3);
+            const yr = float(1.0);
+            const polarAngle = sin(phase.add(3.0)).mul(0.15).add(0.5).mul(t).mul(Math.PI);
+            const result = vec3(0).toVar();
+            result.x.assign(sin(polarAngle).mul(xr));
+            result.y.assign(cos(polarAngle).mul(yr).add(yoffset));
+            result.z.assign(cos(angle).mul(result.x));
+            result.x.assign(sin(angle).mul(result.x));
+            return this.uniforms.matrix.mul(result).xyz;
+        };
+
+        this.updatePositions = Fn(()=>{
+            If(instanceIndex.lessThan(this.uniforms.vertexCount), () => {
+                const vertexId = this.vertexIdData.buffer.element(instanceIndex);
+                const params = this.paramsData.buffer.element(instanceIndex);
+                const offset = this.offsetData.buffer.element(instanceIndex);
+                const result = getBellPosition(params.x, params.y).add(offset);
+                this.physics.positionData.buffer.element(vertexId).xyz.assign(result);
+            });
+        })().compute(this.vertexCount);
+        await this.physics.renderer.computeAsync(this.updatePositions);
+
+        this.isBaked = true;
 
         /*
         const { dimension } = this.physics
@@ -112,7 +162,15 @@ export class MedusaVerletBridge {
          */
     }
 
-    update(uTime) {
+    async update() {
+        if (!this.isBaked) {
+            console.error("Not baked yet!");
+        }
+        const { renderer } = this.physics;
+
+        this.uniforms.matrix.value = this.medusa.object.matrix;
+
+        await renderer.computeAsync(this.updatePositions);
         /*
         const { renderer, positionBuffer } = this.physics;
         this.material.uniforms.uTime.value = uTime;

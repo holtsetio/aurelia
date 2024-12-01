@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { Fn, If, Loop, select, uint, instanceIndex } from "three/tsl";
+import { Fn, If, Loop, select, uint, instanceIndex, uniform } from "three/tsl";
 import {WgpuBuffer} from "../common/WgpuBuffer";
 
 export class VerletPhysics {
@@ -13,8 +13,18 @@ export class VerletPhysics {
 
     benchmarks = [];
 
+    uniforms = {};
+
+    objects = [];
+
+    time = 0;
+
     constructor(renderer){
         this.renderer = renderer;
+    }
+
+    addObject(object) {
+        this.objects.push(object);
     }
 
     addVertex(position, fixed = false) {
@@ -45,6 +55,8 @@ export class VerletPhysics {
         console.log(this.vertexCount + " vertices");
         console.log(this.springCount + " springs");
         //console.log(this.vertexQueue);
+
+        this.uniforms.time = uniform(0);
 
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);
@@ -85,6 +97,10 @@ export class VerletPhysics {
             this.springParamsData.array[id * 2 + 1] = 0;
             this.springLengthFactorData.array[id] = restLengthFactor;
         });
+
+        for (let i=0; i<this.objects.length; i++){
+            await this.objects[i].bake();
+        }
 
         const initSpringLengths = Fn(()=>{
             const vertices = this.springVertexData.buffer.element(instanceIndex);
@@ -171,7 +187,14 @@ export class VerletPhysics {
         }
 
         const start = performance.now();
-        for(let i = 0; i < 10; i++){
+        const steps = 10;
+        for(let i = 0; i < steps; i++){
+            const dt = interval / steps;
+            this.time += dt;
+            this.uniforms.time.value = this.time;
+            for (let i=0; i<this.objects.length; i++){
+                await this.objects[i].update(dt, this.time);
+            }
             await this.renderer.computeAsync(this.computeSpringForces);
             await this.renderer.computeAsync(this.computeVertexForces);
             await this.renderer.computeAsync(this.computeAddForces);
