@@ -13,9 +13,10 @@ export class Medusa {
     physics = null;
     object = null;
     bridge = null;
+    medusaId = -1;
     noiseSeed = 0;
 
-    constructor(renderer, physics){
+    constructor(renderer, physics, bridge){
         this.renderer = renderer;
         this.physics = physics;
         this.object = new THREE.Object3D();
@@ -24,11 +25,12 @@ export class Medusa {
         this.transformationObject.position.set(Math.random() * 5, 0, Math.random() * 5);
 
         this.noiseSeed = Math.random() * 100.0;
-        this.bridge = new MedusaVerletBridge(this.physics, this);
+        this.bridge = bridge;
+        this.medusaId = this.bridge.registerMedusa(this);
+
         this.createBellMaterial();
         this.createBellMarginMaterial();
         this.createBellGeometry();
-        this.physics.addObject(this);
 
         this.updatePosition(0,0);
     }
@@ -287,7 +289,7 @@ export class Medusa {
                 vertex.offset = offset.clone();
                 vertex.zenith = zenith;
                 vertex.azimuth = azimuth;
-                this.bridge.registerVertex(vertex, zenith, azimuth, offset.clone(), y <= 1);
+                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), y <= 1);
                 row.push(vertex);
             }
             row.push(row[0]);
@@ -379,10 +381,11 @@ export class Medusa {
             const { offset, zenith, azimuth } = pivot;
             const tentacle = [];
             tentacle.push(pivot);
+            const segmentLength = 0.14 + Math.random()*0.02;
             for (let y = 1; y < tentacleLength; y++) {
                 const vertex = this.physics.addVertex(new THREE.Vector3(), false);
-                offset.y -= 0.12 + Math.random() * 0.05;
-                this.bridge.registerVertex(vertex, zenith, azimuth, offset.clone(), false);
+                offset.y -= segmentLength;
+                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), false);
                 this.physics.addSpring(tentacle[y-1], vertex, springStrength, 1);
                 if (y > 1) {
                     this.physics.addSpring(tentacle[y-2], vertex, springStrength, 1);
@@ -438,7 +441,7 @@ export class Medusa {
     }
 
     async bake() {
-        return await this.bridge.bake();
+        //return await this.bridge.bake();
     }
 
     updatePosition(delta, elapsed) {
@@ -454,7 +457,7 @@ export class Medusa {
 
     async update(delta, elapsed) {
         this.updatePosition(delta, elapsed);
-        return await this.bridge.update();
+        //return await this.bridge.update();
     }
 
 
@@ -474,7 +477,7 @@ export class Medusa {
         }
         Medusa.normalMap = await loadTexture(normalMapFile);
         Medusa.colorMap = await loadTexture(colorMapFile);
-
     }
+
 
 }

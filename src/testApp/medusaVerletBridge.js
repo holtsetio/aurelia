@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import {cos, float, Fn, instanceIndex, mix, sin, vec3, uniform, If } from "three/tsl";
+import {cos, float, Fn, instanceIndex, mix, sin, vec3, uniform, If, uniformArray, mat4} from "three/tsl";
 import { WgpuBuffer } from "./common/WgpuBuffer"
 import {getBellPosition} from "./medusaBell";
 
@@ -14,38 +14,61 @@ export class MedusaVerletBridge {
 
     uniforms = {};
 
-    constructor(physics, medusa) {
+    medusae = [];
+
+    constructor(physics) {
         this.physics = physics;
-        this.medusa = medusa;
     }
 
-    registerVertex(vertex, zenith, azimuth, offset, fixed) {
+    registerMedusa(medusa) {
+        const ptr = this.medusae.length;
+        this.medusae[ptr] = medusa;
+        return ptr;
+    }
+
+    registerVertex(medusaId, vertex, zenith, azimuth, offset, fixed) {
         if (this.isBaked) {
             console.error("Can't add any more vertices!");
         }
         const { id } = vertex;
-        this.vertexQueue.push({ id, zenith, azimuth, offset, fixed });
+        this.vertexQueue.push({ id, medusaId, zenith, azimuth, offset, fixed });
     }
 
     async bake() {
         this.vertexQueue = this.vertexQueue.sort((x, y) => Number(y.fixed) - Number(x.fixed));
         this.fixedNum = this.vertexQueue.findIndex(v => !v.fixed);
 
+        this.medusaCount = this.medusae.length;
         this.vertexCount = this.vertexQueue.length;
         this.vertexIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "vertexId", true);
+        this.medusaIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "medusaId", true);
         this.paramsData = new WgpuBuffer(this.vertexCount, 'vec2', 2, Float32Array, "params", true); // x: zenith, y: azimuth
         this.offsetData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "offset", true);
-        this.uniforms.matrix = uniform(this.medusa.transformationObject.matrix, "mat4");
+        this.medusaTransformData = uniformArray(new Array(this.medusaCount * 4).fill(0).map(() => { return new THREE.Vector4(); }));
+        console.log(this.medusaTransformData, this.medusaTransformData.array)
+        this.medusae.forEach((medusa, index) => {
+            const matrix = medusa.transformationObject.matrix;
+            this.medusaTransformData.array[index*4+0].set(matrix.elements[0], matrix.elements[1], matrix.elements[2], matrix.elements[3]);
+            this.medusaTransformData.array[index*4+1].set(matrix.elements[4], matrix.elements[5], matrix.elements[6], matrix.elements[7]);
+            this.medusaTransformData.array[index*4+2].set(matrix.elements[8], matrix.elements[9], matrix.elements[10], matrix.elements[11]);
+            this.medusaTransformData.array[index*4+3].set(matrix.elements[12], matrix.elements[13], matrix.elements[14], matrix.elements[15]);
+        });
+
+
+
+        //this.uniforms.matrix = uniform(this.medusa.transformationObject.matrix, "mat4");
         this.uniforms.vertexCount = uniform(this.vertexCount, "uint");
 
         this.vertexQueue.forEach((v, index) => {
-            const { id, zenith, azimuth, offset } = v;
+            const { id, medusaId, zenith, azimuth, offset } = v;
             this.vertexIdData.array[index] = id;
+            this.medusaIdData.array[index] = medusaId;
             this.paramsData.array[index * 2 + 0] = zenith;
             this.paramsData.array[index * 2 + 1] = azimuth;
             this.offsetData.array[index * 3 + 0] = offset.x;
             this.offsetData.array[index * 3 + 1] = offset.y;
             this.offsetData.array[index * 3 + 2] = offset.z;
+
         });
 
         /*
@@ -67,17 +90,28 @@ export class MedusaVerletBridge {
             return vec3(x,y,z);
         }*/
 
-
+        console.time("compileBridge");
         this.updatePositions = Fn(()=>{
             If(instanceIndex.lessThan(this.uniforms.vertexCount), () => {
+                const medusaId = this.medusaIdData.buffer.element(instanceIndex);
+                const medusaPtr = medusaId.mul(4).toVar();
+                const m0 = this.medusaTransformData.element(medusaPtr);
+                const m1 = this.medusaTransformData.element(medusaPtr.add(1));
+                const m2 = this.medusaTransformData.element(medusaPtr.add(2));
+                const m3 = this.medusaTransformData.element(medusaPtr.add(3));
+                const medusaTransform = mat4(m0,m1,m2,m3);
+
+
+
                 const vertexId = this.vertexIdData.buffer.element(instanceIndex);
                 const params = this.paramsData.buffer.element(instanceIndex);
                 const offset = this.offsetData.buffer.element(instanceIndex);
-                const result = this.uniforms.matrix.mul(getBellPosition(this.physics.uniforms.time, params.x, params.y).add(offset)).xyz;
+                const result = medusaTransform.mul(getBellPosition(this.physics.uniforms.time, params.x, params.y).add(offset)).xyz;
                 this.physics.positionData.buffer.element(vertexId).xyz.assign(result);
             });
         })().compute(this.vertexCount);
         await this.physics.renderer.computeAsync(this.updatePositions);
+        console.timeEnd("compileBridge");
 
         this.uniforms.vertexCount.value = this.fixedNum;
         this.updatePositions.count = this.fixedNum;
@@ -158,7 +192,14 @@ export class MedusaVerletBridge {
         }
         const { renderer } = this.physics;
 
-        this.uniforms.matrix.value = this.medusa.transformationObject.matrix;
+        this.medusae.forEach((medusa, index) => {
+            const matrix = medusa.transformationObject.matrix;
+            this.medusaTransformData.array[index*4+0].set(matrix.elements[0], matrix.elements[1], matrix.elements[2], matrix.elements[3]);
+            this.medusaTransformData.array[index*4+1].set(matrix.elements[4], matrix.elements[5], matrix.elements[6], matrix.elements[7]);
+            this.medusaTransformData.array[index*4+2].set(matrix.elements[8], matrix.elements[9], matrix.elements[10], matrix.elements[11]);
+            this.medusaTransformData.array[index*4+3].set(matrix.elements[12], matrix.elements[13], matrix.elements[14], matrix.elements[15]);
+        });
+       // this.uniforms.matrix.value = this.medusa.transformationObject.matrix;
 
         await renderer.computeAsync(this.updatePositions);
         /*

@@ -15,6 +15,7 @@ import {SpringVisualizer} from "./physics/springVisualizer";
 import {Medusa} from "./medusa";
 import hdriFile from "../assets/qwantani_puresky_2k.hdr";
 import {TestGeometry} from "./testGeometry";
+import {MedusaVerletBridge} from "./medusaVerletBridge";
 
 const loadHdr = (file) => {
     return new Promise((resolve, reject) => {
@@ -51,6 +52,7 @@ class TestApp {
     }
 
     async init(progressCallback) {
+        this.renderer.init();
         this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.01, 100);
         this.camera.position.set(0, 0, -5);
         this.camera.lookAt(0, 0, 0);
@@ -83,12 +85,15 @@ class TestApp {
         await progressCallback(0.5);
 
         this.physics = new VerletPhysics(this.renderer);
+        this.bridge = new MedusaVerletBridge(this.physics);
 
         console.time("Medusae");
-        for (let i=0; i<2; i++) {
-            const medusa = new Medusa(this.renderer, this.physics);
+        for (let i=0; i<20; i++) {
+            const medusa = new Medusa(this.renderer, this.physics, this.bridge);
             this.scene.add(medusa.object);
+            this.physics.addObject(medusa);
         }
+        this.physics.addObject(this.bridge);
         console.timeEnd("Medusae");
 
         console.time("Baking");
@@ -98,7 +103,7 @@ class TestApp {
         this.vertexVisualizer = new VertexVisualizer(this.physics);
         //this.scene.add(this.vertexVisualizer.object);
         this.springVisualizer = new SpringVisualizer(this.physics);
-        //this.scene.add(this.springVisualizer.object);
+        this.scene.add(this.springVisualizer.object);
 
         //this.testGeometry = new TestGeometry();
         //this.scene.add(this.testGeometry.object);
@@ -125,7 +130,7 @@ class TestApp {
 
         this.renderer.render(this.scene, this.camera);
 
-        //console.log(this.renderer.info);
+        console.log(this.renderer.info);
     }
 }
 export default TestApp;
