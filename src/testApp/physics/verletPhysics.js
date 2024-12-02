@@ -82,8 +82,6 @@ export class VerletPhysics {
                 });
             }
         });
-        console.log(this.influencerPtrData.array);
-        console.log(influencerPtr, this.influencerData.array);
 
         this.springVertexData = new WgpuBuffer(this.springCount, 'uvec2', 2, Uint32Array, "springVertex", true);
         this.springParamsData = new WgpuBuffer(this.springCount, 'vec2', 2, Float32Array, "springParams", true); // x: stiffness, y: restLength,
@@ -98,9 +96,11 @@ export class VerletPhysics {
             this.springLengthFactorData.array[id] = restLengthFactor;
         });
 
+        console.time("bake/objects");
         for (let i=0; i<this.objects.length; i++){
             await this.objects[i].bake();
         }
+        console.timeEnd("bake/objects");
 
         const initSpringLengths = Fn(()=>{
             const vertices = this.springVertexData.buffer.element(instanceIndex);
@@ -131,7 +131,7 @@ export class VerletPhysics {
             const ptrStart = influencerPtr.x.toVar();
             const ptrEnd = ptrStart.add(influencerPtr.y).toVar();
             const force = this.forceData.buffer.element(instanceIndex).toVar();
-            force.mulAssign(0.995);
+            force.mulAssign(0.998);
             Loop({ start: ptrStart, end: ptrEnd,  type: 'uint', condition: '<' }, ({ i })=>{
                 const springPtr = this.influencerData.buffer.element(i);
                 //const springSign = this.influencerSignData.readOnly.element(i);

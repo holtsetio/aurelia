@@ -14,6 +14,7 @@ import { VertexVisualizer } from "./physics/vertexVisualizer";
 import {SpringVisualizer} from "./physics/springVisualizer";
 import {Medusa} from "./medusa";
 import hdriFile from "../assets/qwantani_puresky_2k.hdr";
+import {TestGeometry} from "./testGeometry";
 
 const loadHdr = (file) => {
     return new Promise((resolve, reject) => {
@@ -63,11 +64,15 @@ class TestApp {
 
         await progressCallback(0.1);
 
+        console.time("textures");
+        await Medusa.initTextures();
+        console.timeEnd("textures");
+
+        await progressCallback(0.3);
+
         this.lights = new Lights();
         this.scene.add(this.lights.object);
 
-        const equirectTexture = new THREE.TextureLoader().load( 'textures/2294472375_24a3b8ef46_o.jpg' );
-        equirectTexture.colorSpace = THREE.SRGBColorSpace;
         const hdriTexture = await loadHdr(hdriFile);
         this.scene.environment = hdriTexture;
         this.scene.background = hdriTexture;
@@ -79,18 +84,24 @@ class TestApp {
 
         this.physics = new VerletPhysics(this.renderer);
 
-        for (let i=0; i<10; i++) {
+        console.time("Medusae");
+        for (let i=0; i<2; i++) {
             const medusa = new Medusa(this.renderer, this.physics);
             this.scene.add(medusa.object);
         }
+        console.timeEnd("Medusae");
 
-
+        console.time("Baking");
         await this.physics.bake();
-        this.vertexVisualizer = new VertexVisualizer(this.physics);
-        this.scene.add(this.vertexVisualizer.object);
-        this.springVisualizer = new SpringVisualizer(this.physics);
-        this.scene.add(this.springVisualizer.object);
+        console.timeEnd("Baking");
 
+        this.vertexVisualizer = new VertexVisualizer(this.physics);
+        //this.scene.add(this.vertexVisualizer.object);
+        this.springVisualizer = new SpringVisualizer(this.physics);
+        //this.scene.add(this.springVisualizer.object);
+
+        //this.testGeometry = new TestGeometry();
+        //this.scene.add(this.testGeometry.object);
 
 
         this.stats = new Stats();
@@ -109,8 +120,12 @@ class TestApp {
         this.stats.update();
         this.lights.update(elapsed);
         await this.physics.update(delta, elapsed);
+
+        //this.testGeometry.update(elapsed);
+
         this.renderer.render(this.scene, this.camera);
-        console.log(this.renderer.info);
+
+        //console.log(this.renderer.info);
     }
 }
 export default TestApp;

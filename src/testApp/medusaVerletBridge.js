@@ -35,7 +35,7 @@ export class MedusaVerletBridge {
         this.vertexIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "vertexId", true);
         this.paramsData = new WgpuBuffer(this.vertexCount, 'vec2', 2, Float32Array, "params", true); // x: zenith, y: azimuth
         this.offsetData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "offset", true);
-        this.uniforms.matrix = uniform(this.medusa.object.matrix, "mat4");
+        this.uniforms.matrix = uniform(this.medusa.transformationObject.matrix, "mat4");
         this.uniforms.vertexCount = uniform(this.vertexCount, "uint");
 
         this.vertexQueue.forEach((v, index) => {
@@ -158,7 +158,7 @@ export class MedusaVerletBridge {
         }
         const { renderer } = this.physics;
 
-        this.uniforms.matrix.value = this.medusa.object.matrix;
+        this.uniforms.matrix.value = this.medusa.transformationObject.matrix;
 
         await renderer.computeAsync(this.updatePositions);
         /*
