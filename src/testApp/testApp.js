@@ -1,6 +1,7 @@
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Stats from "three/examples/jsm/libs/stats.module";
+import {RGBELoader} from "three/examples/jsm/loaders/RGBELoader";
 
 /*import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
@@ -12,6 +13,18 @@ import { VerletPhysics } from "./physics/verletPhysics";
 import { VertexVisualizer } from "./physics/vertexVisualizer";
 import {SpringVisualizer} from "./physics/springVisualizer";
 import {Medusa} from "./medusa";
+import hdriFile from "../assets/qwantani_puresky_2k.hdr";
+
+const loadHdr = (file) => {
+    return new Promise((resolve, reject) => {
+        new RGBELoader().load( file, (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            //texture.minFilter = THREE.LinearMipmapLinearFilter;
+            //texture.generateMipmaps = true;
+            resolve(texture);
+        });
+    })
+};
 
 class TestApp {
     renderer = null;
@@ -53,10 +66,12 @@ class TestApp {
         this.lights = new Lights();
         this.scene.add(this.lights.object);
 
-        /*const hdriTexture = await loadHdrjpg(this.renderer, hdrjpg);
+        const equirectTexture = new THREE.TextureLoader().load( 'textures/2294472375_24a3b8ef46_o.jpg' );
+        equirectTexture.colorSpace = THREE.SRGBColorSpace;
+        const hdriTexture = await loadHdr(hdriFile);
         this.scene.environment = hdriTexture;
         this.scene.background = hdriTexture;
-        this.scene.backgroundBlurriness = 0.5;*/
+        this.scene.backgroundBlurriness = 0.3;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
 
@@ -95,6 +110,7 @@ class TestApp {
         this.lights.update(elapsed);
         await this.physics.update(delta, elapsed);
         this.renderer.render(this.scene, this.camera);
+        console.log(this.renderer.info);
     }
 }
 export default TestApp;

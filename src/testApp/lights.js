@@ -41,7 +41,7 @@ export class Lights {
                 noise3D(light.noiseCoord, 17.23, t),
                 noise3D(light.noiseCoord, 43.33, t),
                 noise3D(light.noiseCoord, 84.43, t)
-            ).multiplyScalar(20);
+            ).multiplyScalar(500);
         }
     }
 }

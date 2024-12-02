@@ -187,7 +187,8 @@ export class VerletPhysics {
         }
 
         const start = performance.now();
-        const steps = 2;
+        const steps = 6;
+        interval = Math.min(1/60, interval);
         for(let i = 0; i < steps; i++){
             const dt = interval / steps;
             this.time += dt;

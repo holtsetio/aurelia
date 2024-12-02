@@ -1,6 +1,7 @@
 import * as THREE from "three/webgpu";
 import {cos, float, Fn, instanceIndex, mix, sin, vec3, uniform, If } from "three/tsl";
 import { WgpuBuffer } from "./common/WgpuBuffer"
+import {getBellPosition} from "./medusaBell";
 
 export class MedusaVerletBridge {
     physics = null;
@@ -65,28 +66,14 @@ export class MedusaVerletBridge {
             x = sin(angle) * x;
             return vec3(x,y,z);
         }*/
-        const getBellPosition = (t, angle) => {
-            const phase = this.physics.uniforms.time.mul(0.2).mul(Math.PI*2).toVar();
-            const yoffset = sin(phase.add(3.0)).mul(0.5);
-            phase.subAssign(mix(0.0, t.mul(0.95), t));
-            phase.addAssign(Math.PI * 0.5);
-            const xr = sin(phase).mul(0.3).add(1.3);
-            const yr = float(1.0);
-            const polarAngle = sin(phase.add(3.0)).mul(0.15).add(0.5).mul(t).mul(Math.PI);
-            const result = vec3(0).toVar();
-            result.x.assign(sin(polarAngle).mul(xr));
-            result.y.assign(cos(polarAngle).mul(yr).add(yoffset));
-            result.z.assign(cos(angle).mul(result.x));
-            result.x.assign(sin(angle).mul(result.x));
-            return result;
-        };
+
 
         this.updatePositions = Fn(()=>{
             If(instanceIndex.lessThan(this.uniforms.vertexCount), () => {
                 const vertexId = this.vertexIdData.buffer.element(instanceIndex);
                 const params = this.paramsData.buffer.element(instanceIndex);
                 const offset = this.offsetData.buffer.element(instanceIndex);
-                const result = this.uniforms.matrix.mul(getBellPosition(params.x, params.y).add(offset)).xyz;
+                const result = this.uniforms.matrix.mul(getBellPosition(this.physics.uniforms.time, params.x, params.y).add(offset)).xyz;
                 this.physics.positionData.buffer.element(vertexId).xyz.assign(result);
             });
         })().compute(this.vertexCount);
@@ -97,7 +84,6 @@ export class MedusaVerletBridge {
         this.updatePositions.updateDispatchCount();
 
         this.isBaked = true;
-
         /*
         const { dimension } = this.physics
         this.material = new RawShaderMaterial({
