@@ -28,8 +28,8 @@ export class Medusa {
         this.bridge = bridge;
         this.medusaId = this.bridge.registerMedusa(this);
 
-        this.createBellMaterial();
-        this.createBellMarginMaterial();
+        //this.createBellMaterial();
+        //this.createBellMarginMaterial();
         this.createBellGeometry();
 
         this.updatePosition(0,0);
@@ -50,8 +50,8 @@ export class Medusa {
         return vertex;
     }*/
 
-    createBellMaterial() {
-        this.bellMaterial = new THREE.MeshPhysicalNodeMaterial({
+    static createBellMaterial(physics) {
+        Medusa.bellMaterial = new THREE.MeshPhysicalNodeMaterial({
             side: THREE.DoubleSide,
             metalness: 0.5,
             roughness:0.32,
@@ -67,23 +67,23 @@ export class Medusa {
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
-        this.bellMaterial.positionNode = Fn(() => {
+        Medusa.bellMaterial.positionNode = Fn(() => {
             const zenith = attribute('zenith');
             const azimuth = attribute('azimuth');
-            const position = getBellPosition(this.physics.uniforms.time, zenith, azimuth).toVar();
-            const tangent = getBellPosition(this.physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
-            const bitangent = getBellPosition(this.physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
+            const position = getBellPosition(physics.uniforms.time, zenith, azimuth).toVar();
+            const tangent = getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
+            const bitangent = getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
             vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
 
             return position;
         })();
-        this.bellMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
+        Medusa.bellMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
         //this.bellMaterial.normalNode = vNormal.normalize();
         //this.material.colorNode = vNormal;
     }
 
-    createBellMarginMaterial() {
-        this.bellMarginMaterial = new THREE.MeshPhysicalNodeMaterial({
+    static createBellMarginMaterial(physics) {
+        Medusa.bellMarginMaterial = new THREE.MeshPhysicalNodeMaterial({
             side: THREE.DoubleSide,
             metalness: 0.5,
             roughness:0.32,
@@ -99,18 +99,18 @@ export class Medusa {
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
-        this.bellMarginMaterial.positionNode = Fn(() => {
+        Medusa.bellMarginMaterial.positionNode = Fn(() => {
             const vertexIds = attribute('vertexIds');
-            const p0 = this.physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
-            const p1 = this.physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
-            const p2 = this.physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
+            const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
+            const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
+            const p2 = physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
             const bitangent = p1.sub(p0);
             const tangent = p2.sub(p0);
             vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
 
             return p0.mul(1.0/3.0).add(p1.mul(1.0/3.0)).add(p2.mul(1.0/3.0));
         })();
-        this.bellMarginMaterial.normalNode = vNormal.normalize();
+        Medusa.bellMarginMaterial.normalNode = vNormal.normalize();
         //this.material.colorNode = vNormal;
 
     }
@@ -261,7 +261,7 @@ export class Medusa {
         geometry.setAttribute( 'uv', uvBuffer);
         geometry.setIndex(indices);
 
-        this.medusa = new THREE.Mesh(geometry, this.bellMaterial);
+        this.medusa = new THREE.Mesh(geometry, Medusa.bellMaterial);
         this.medusa.frustumCulled = false;
         this.transformationObject.add(this.medusa);
 
@@ -364,7 +364,7 @@ export class Medusa {
         marginGeometry.setAttribute('vertexIds', marginVertexIdBuffer);
         marginGeometry.setIndex(marginIndices);
 
-        this.bellMargin = new THREE.Mesh(marginGeometry, this.bellMarginMaterial);
+        this.bellMargin = new THREE.Mesh(marginGeometry, Medusa.bellMarginMaterial);
         this.bellMargin.frustumCulled = false;
         this.object.add(this.bellMargin);
 
@@ -464,7 +464,7 @@ export class Medusa {
     static colorMap;
     static normalMap;
     static aoMap;
-    static async initTextures() {
+    static async initStatic(physics) {
         const textureLoader = new THREE.TextureLoader();
         const loadTexture = (file) => {
             return new Promise(resolve => {
@@ -477,6 +477,9 @@ export class Medusa {
         }
         Medusa.normalMap = await loadTexture(normalMapFile);
         Medusa.colorMap = await loadTexture(colorMapFile);
+
+        Medusa.createBellMaterial(physics);
+        Medusa.createBellMarginMaterial(physics);
     }
 
 

@@ -21,6 +21,8 @@ export class VerletPhysics {
 
     constructor(renderer){
         this.renderer = renderer;
+
+        this.uniforms.time = uniform(0);
     }
 
     addObject(object) {
@@ -56,7 +58,6 @@ export class VerletPhysics {
         console.log(this.springCount + " springs");
         //console.log(this.vertexQueue);
 
-        this.uniforms.time = uniform(0);
 
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);

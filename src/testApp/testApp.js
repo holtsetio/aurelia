@@ -66,9 +66,7 @@ class TestApp {
 
         await progressCallback(0.1);
 
-        console.time("textures");
-        await Medusa.initTextures();
-        console.timeEnd("textures");
+        this.physics = new VerletPhysics(this.renderer);
 
         await progressCallback(0.3);
 
@@ -82,9 +80,14 @@ class TestApp {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
 
+        await progressCallback(0.4);
+
+        console.time("textures");
+        await Medusa.initStatic(this.physics);
+        console.timeEnd("textures");
+
         await progressCallback(0.5);
 
-        this.physics = new VerletPhysics(this.renderer);
         this.bridge = new MedusaVerletBridge(this.physics);
 
         console.time("Medusae");
@@ -130,7 +133,7 @@ class TestApp {
 
         this.renderer.render(this.scene, this.camera);
 
-        console.log(this.renderer.info);
+        //console.log(this.renderer.info);
     }
 }
 export default TestApp;
