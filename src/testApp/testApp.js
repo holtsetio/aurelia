@@ -91,7 +91,7 @@ class TestApp {
         this.bridge = new MedusaVerletBridge(this.physics);
 
         console.time("Medusae");
-        for (let i=0; i<20; i++) {
+        for (let i=0; i<10; i++) {
             const medusa = new Medusa(this.renderer, this.physics, this.bridge);
             this.scene.add(medusa.object);
             this.physics.addObject(medusa);

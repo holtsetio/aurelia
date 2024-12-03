@@ -45,7 +45,7 @@ export class MedusaVerletBridge {
         this.paramsData = new WgpuBuffer(this.vertexCount, 'vec2', 2, Float32Array, "params", true); // x: zenith, y: azimuth
         this.offsetData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "offset", true);
         this.medusaTransformData = uniformArray(new Array(this.medusaCount * 4).fill(0).map(() => { return new THREE.Vector4(); }));
-        console.log(this.medusaTransformData, this.medusaTransformData.array)
+
         this.medusae.forEach((medusa, index) => {
             const matrix = medusa.transformationObject.matrix;
             this.medusaTransformData.array[index*4+0].set(matrix.elements[0], matrix.elements[1], matrix.elements[2], matrix.elements[3]);
