@@ -106,7 +106,7 @@ class TestApp {
         this.vertexVisualizer = new VertexVisualizer(this.physics);
         //this.scene.add(this.vertexVisualizer.object);
         this.springVisualizer = new SpringVisualizer(this.physics);
-        this.scene.add(this.springVisualizer.object);
+        //this.scene.add(this.springVisualizer.object);
 
         //this.testGeometry = new TestGeometry();
         //this.scene.add(this.testGeometry.object);

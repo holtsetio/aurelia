@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { Fn, attribute, varying, vec3, transformNormalToView, normalMap, texture, vec2 } from "three/tsl";
+import { Fn, attribute, varying, vec3, transformNormalToView, normalMap, texture, vec2, If, uniform } from "three/tsl";
 
 import {MedusaVerletBridge} from "./medusaVerletBridge";
 import {noise2D, noise3D} from "../testApp/common/noise";
@@ -15,6 +15,7 @@ export class Medusa {
     bridge = null;
     medusaId = -1;
     noiseSeed = 0;
+    static uniforms = {};
 
     constructor(renderer, physics, bridge){
         this.renderer = renderer;
@@ -78,11 +79,13 @@ export class Medusa {
             return position;
         })();
         Medusa.bellMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
-        //this.bellMaterial.normalNode = vNormal.normalize();
+        //Medusa.bellMaterial.normalNode = vNormal.normalize();
         //this.material.colorNode = vNormal;
     }
 
     static createBellMarginMaterial(physics) {
+        Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
+
         Medusa.bellMarginMaterial = new THREE.MeshPhysicalNodeMaterial({
             side: THREE.DoubleSide,
             metalness: 0.5,
@@ -100,20 +103,41 @@ export class Medusa {
 
         const vNormal = varying(vec3(0), "v_normalView");
         Medusa.bellMarginMaterial.positionNode = Fn(() => {
-            const vertexIds = attribute('vertexIds');
-            const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
-            const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
-            const p2 = physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
-            const p3 = physics.positionData.buffer.element(vertexIds.w).xyz.toVar();
-            const bitangent = p0.sub(p3);
-            const tangent = p1.sub(p2);
+            const tangent = vec3().toVar();
+            const bitangent = vec3().toVar();
+            const position = vec3().toVar();
+            const params = attribute('params');
+
+            If(params.x.greaterThan(0.0), () => {
+                const zenith = params.x;
+                const azimuth = params.y;
+                position.assign(getBellPosition(physics.uniforms.time, zenith, azimuth));
+                position.assign(Medusa.uniforms.matrix.mul(position).xyz);
+                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001))).xyz;
+                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001))).xyz;
+                tangent.assign(p0.sub(position));
+                bitangent.assign(p1.sub(position));
+
+            }).Else(() => {
+                const vertexIds = attribute('vertexIds');
+                const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
+                const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
+                const p2 = physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
+                const p3 = physics.positionData.buffer.element(vertexIds.w).xyz.toVar();
+                bitangent.assign(p0.sub(p3));
+                tangent.assign(p1.sub(p2));
+                const pos = p0.mul(0.25).add(p1.mul(0.25)).add(p2.mul(0.25)).add(p3.mul(0.25));
+                position.assign(pos);
+            });
+
+
             vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
 
-            return p0.mul(0.25).add(p1.mul(0.25)).add(p2.mul(0.25)).add(p3.mul(0.25));
+            return position;
         })();
-        Medusa.bellMarginMaterial.normalNode = vNormal.normalize();
         Medusa.bellMarginMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
-        //this.material.colorNode = vNormal;
+        //Medusa.bellMarginMaterial.normalNode = vNormal.normalize();
+
 
     }
 
@@ -154,9 +178,9 @@ export class Medusa {
             let zenith = Math.atan2(width, position.y) / (Math.PI * 0.5);
             const azimuth = Math.atan2(position.x, position.z);
 
-            const noisePosX = Math.sin(azimuth) * 5;
-            const noisePosY = Math.cos(azimuth) * 5;
-            zenith *= 0.95 + noise3D(this.noiseSeed, noisePosX, noisePosY) * 0.05;
+            const noisePosX = Math.sin(azimuth) * 3;
+            const noisePosY = Math.cos(azimuth) * 3;
+            zenith *= 0.90 + noise3D(this.noiseSeed, noisePosX, noisePosY) * 0.05;
 
             const uvx = Math.sin(azimuth) * zenith * 4;
             const uvy = Math.cos(azimuth) * zenith * 4;
@@ -289,7 +313,7 @@ export class Medusa {
             const row = [];
             for (let x = 0; x < bellMarginWidth; x++) {
                 const pivot = vertexRows[vertexRows.length - 1][x];
-                const zenith = pivot.zenith - (y===0 ? 0.02 : 0);
+                const zenith = pivot.zenith;
                 const azimuth = pivot.azimuth;
                 const vertex = this.physics.addVertex(new THREE.Vector3(), y <= 1);
                 const offset = new THREE.Vector3(0, (y-1) * -0.05, 0);
@@ -297,8 +321,16 @@ export class Medusa {
                 vertex.offset = offset.clone();
                 vertex.zenith = zenith;
                 vertex.azimuth = azimuth;
-                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), y <= 1);
+                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), 0, y <= 1);
                 row.push(vertex);
+
+                //muscle vertex
+                const zeroOffset = new THREE.Vector3(0,0,0);
+                if (y>=1 && y <= 3) {
+                    const muscleVertex = this.physics.addVertex(new THREE.Vector3(), true);
+                    this.bridge.registerVertex(this.medusaId, muscleVertex, zenith, azimuth, zeroOffset, -offset.y, true);
+                    this.physics.addSpring(vertex, muscleVertex, 0.1 / Math.pow(y + 1, 3), 0);
+                }
             }
             row.push(row[0]);
             bellMarginRows.push(row);
@@ -326,41 +358,64 @@ export class Medusa {
 
         const marginPositionArray = [];
         const marginVertexIdArray = [];
+        const marginParamsArray = [];
         const marginUvArray = [];
         const marginIndices = [];
         const marginVertexRows = [];
         let marginVertexCount = 0;
         const normalizeAzimuth = (a) => { return a < 0 ? a + Math.PI * 2 : a; }
-        const addMarginVertex = (v0, v1, v2, v3, log = false) => {
+        const addMarginVertex = (referenceVertex, v0, v1, v2, v3) => {
             const ptr = marginVertexCount;
+            let azimuth, zenith;
 
-            const azimuth = (normalizeAzimuth(v0.azimuth) + normalizeAzimuth(v1.azimuth) + normalizeAzimuth(v2.azimuth) + normalizeAzimuth(v3.azimuth)) * 0.25;
-            let zenith = (v0.zenith + v1.zenith + v2.zenith + v3.zenith) * 0.25;
-            zenith -= (v0.offset.y + v1.offset.y + v2.offset.y + v3.offset.y) * 0.25;
+            if (referenceVertex) {
+                zenith = referenceVertex.zenith;
+                azimuth = referenceVertex.azimuth;
+            } else {
+                azimuth = (normalizeAzimuth(v0.azimuth) + normalizeAzimuth(v1.azimuth) + normalizeAzimuth(v2.azimuth) + normalizeAzimuth(v3.azimuth)) * 0.25;
+                zenith = (v0.zenith + v1.zenith + v2.zenith + v3.zenith) * 0.25;
+                zenith -= (v0.offset.y + v1.offset.y + v2.offset.y + v3.offset.y) * 0.25;
+            }
             const uvx = Math.sin(azimuth) * zenith * 4;
             const uvy = Math.cos(azimuth) * zenith * 4;
 
             marginPositionArray[ptr * 3 + 0] = 0;
             marginPositionArray[ptr * 3 + 1] = 0;
             marginPositionArray[ptr * 3 + 2] = 0;
-            marginVertexIdArray[ptr * 4 + 0] = v0.id;
-            marginVertexIdArray[ptr * 4 + 1] = v1.id;
-            marginVertexIdArray[ptr * 4 + 2] = v2.id;
-            marginVertexIdArray[ptr * 4 + 3] = v3.id;
+            marginVertexIdArray[ptr * 4 + 0] = v0 ? v0.id : 0;
+            marginVertexIdArray[ptr * 4 + 1] = v1 ? v1.id : 0;
+            marginVertexIdArray[ptr * 4 + 2] = v2 ? v2.id : 0;
+            marginVertexIdArray[ptr * 4 + 3] = v3 ? v3.id : 0;
             marginUvArray[ptr * 2 + 0] = uvx;
             marginUvArray[ptr * 2 + 1] = uvy;
+
+            marginParamsArray[ptr * 2 + 0] = referenceVertex ? zenith : 0;
+            marginParamsArray[ptr * 2 + 1] = referenceVertex ? azimuth : 0;
+
             marginVertexCount++;
             return ptr;
         };
 
-        for (let y = 1; y < bellMarginHeight; y++) {
+        {
+            // first bell margin row
+            const row = []
+            for (let x = 0; x < bellMarginWidth; x++) {
+                const refVertex = vertexRows[vertexRows.length - 1][x];
+                const vertex = addMarginVertex(refVertex);
+                row.push(vertex);
+            }
+            row.push(row[0]);
+            marginVertexRows.push(row);
+        }
+
+        for (let y = 2; y < bellMarginHeight; y++) {
             const row = []
             for (let x = 0; x < bellMarginWidth; x++) {
                 const v0 = bellMarginRows[y-1][x];
                 const v1 = bellMarginRows[y-1][x+1];
                 const v2 = bellMarginRows[y][x];
                 const v3 = bellMarginRows[y][x+1];
-                const vertex = addMarginVertex(v0,v1,v2,v3, x===45 || x ===43);
+                const vertex = addMarginVertex(null,v0,v1,v2,v3);
                 row.push(vertex);
             }
             row.push(row[0]);
@@ -378,16 +433,22 @@ export class Medusa {
         }
         const marginPositionBuffer =  new THREE.BufferAttribute(new Float32Array(marginPositionArray), 3, false);
         const marginVertexIdBuffer =  new THREE.BufferAttribute(new Uint32Array(marginVertexIdArray), 4, false);
+        const marginParamsBuffer =  new THREE.BufferAttribute(new Float32Array(marginParamsArray), 2, false);
         const marginUvBuffer =  new THREE.BufferAttribute(new Float32Array(marginUvArray), 2, false);
         const marginGeometry = new THREE.BufferGeometry();
         marginGeometry.setAttribute('position', marginPositionBuffer);
         marginGeometry.setAttribute('vertexIds', marginVertexIdBuffer);
+        marginGeometry.setAttribute('params', marginParamsBuffer);
         marginGeometry.setAttribute('uv', marginUvBuffer);
         marginGeometry.setIndex(marginIndices);
 
         this.bellMargin = new THREE.Mesh(marginGeometry, Medusa.bellMarginMaterial);
         this.bellMargin.frustumCulled = false;
         this.object.add(this.bellMargin);
+
+        this.bellMargin.onBeforeRender = () => {
+            Medusa.uniforms.matrix.value.copy(this.transformationObject.matrix);
+        }
 
 
         /* ##################################
@@ -406,7 +467,7 @@ export class Medusa {
             for (let y = 1; y < tentacleLength; y++) {
                 const vertex = this.physics.addVertex(new THREE.Vector3(), false);
                 offset.y -= segmentLength;
-                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), false);
+                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), 0, false);
                 this.physics.addSpring(tentacle[y-1], vertex, springStrength, 1);
                 if (y > 1) {
                     this.physics.addSpring(tentacle[y-2], vertex, springStrength, 1);
