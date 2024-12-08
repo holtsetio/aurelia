@@ -64,7 +64,7 @@ export class Medusa {
             clearcoatRoughness: 0.5,
             iridescence: 1.0,
             iridescenceIOR: 1.666,
-            //opacity: 0,
+            //opacity: 0.5,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
@@ -87,7 +87,7 @@ export class Medusa {
         Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
 
         Medusa.bellMarginMaterial = new THREE.MeshPhysicalNodeMaterial({
-            side: THREE.DoubleSide,
+            //side: THREE.Single,
             metalness: 0.5,
             roughness:0.32,
             transmission: 0.8,
@@ -315,13 +315,14 @@ export class Medusa {
                 const pivot = vertexRows[vertexRows.length - 1][x];
                 const zenith = pivot.zenith;
                 const azimuth = pivot.azimuth;
-                const vertex = this.physics.addVertex(new THREE.Vector3(), y <= 1);
-                const offset = new THREE.Vector3(0, (y-1) * -0.05, 0);
-                if (y <= 1) { offset.multiplyScalar(0); }
+                const vertex = this.physics.addVertex(new THREE.Vector3(), y === 0);
+                const offset = new THREE.Vector3(Math.sin(azimuth) * y * 0.06, y * -0.06, Math.cos(azimuth) * y * 0.06);
+                offset.multiplyScalar(0.7);
+                //if (y <= 1) { offset.multiplyScalar(0); }
                 vertex.offset = offset.clone();
                 vertex.zenith = zenith;
                 vertex.azimuth = azimuth;
-                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), 0, y <= 1);
+                this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), 0, y === 0);
                 row.push(vertex);
 
                 //muscle vertex
@@ -329,24 +330,25 @@ export class Medusa {
                 if (y>=1 && y <= 3) {
                     const muscleVertex = this.physics.addVertex(new THREE.Vector3(), true);
                     this.bridge.registerVertex(this.medusaId, muscleVertex, zenith, azimuth, zeroOffset, -offset.y, true);
-                    this.physics.addSpring(vertex, muscleVertex, 0.1 / Math.pow(y + 1, 3), 0);
+                    this.physics.addSpring(vertex, muscleVertex, 0.02 / Math.pow(y, 3), 0);
                 }
             }
             row.push(row[0]);
             bellMarginRows.push(row);
         }
-        for (let y = 2; y < bellMarginHeight; y++) {
+        for (let y = 1; y < bellMarginHeight; y++) {
             for (let x = 0; x < bellMarginWidth; x++) {
                 const springStrength = 0.002;
                 const v0 = bellMarginRows[y][x];
                 const v1 = bellMarginRows[y-1][x];
                 const v2 = bellMarginRows[y][x+1];
                 const v3 = bellMarginRows[y-1][x+1];
-                const v4 = bellMarginRows[y-2][x];
+
                 this.physics.addSpring(v0, v1, springStrength, 1);
                 this.physics.addSpring(v0, v2, springStrength, 1);
                 this.physics.addSpring(v1, v2, springStrength, 1);
                 this.physics.addSpring(v0, v3, springStrength, 1);
+
                 //this.physics.addSpring(v0, v4, 0.1, 1);
                 //this.physics.addSpring(v0, v4, springStrength, 1);
             }
