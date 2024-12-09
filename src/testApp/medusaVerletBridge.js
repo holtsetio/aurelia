@@ -1,7 +1,7 @@
 import * as THREE from "three/webgpu";
 import {cos, float, Fn, instanceIndex, mix, sin, vec3, uniform, If, uniformArray, mat4, abs} from "three/tsl";
 import { WgpuBuffer } from "./common/WgpuBuffer"
-import {getBellPosition} from "./medusaBell";
+import {getBellPosition} from "./medusaBellFormula";
 
 export class MedusaVerletBridge {
     physics = null;
