@@ -106,7 +106,7 @@ class TestApp {
         this.vertexVisualizer = new VertexVisualizer(this.physics);
         //this.scene.add(this.vertexVisualizer.object);
         this.springVisualizer = new SpringVisualizer(this.physics);
-        //this.scene.add(this.springVisualizer.object);
+        this.scene.add(this.springVisualizer.object);
 
         //this.testGeometry = new TestGeometry();
         //this.scene.add(this.testGeometry.object);
@@ -123,11 +123,16 @@ class TestApp {
         this.camera.updateProjectionMatrix();
     }
     async update(delta, elapsed) {
+        const { runSimulation, showVerletSprings } = conf;
+        this.springVisualizer.object.visible = showVerletSprings;
+
         conf.update();
         this.controls.update(delta);
         this.stats.update();
         this.lights.update(elapsed);
-        await this.physics.update(delta, elapsed);
+        if (runSimulation) {
+            await this.physics.update(delta, elapsed);
+        }
 
         //this.testGeometry.update(elapsed);
 

@@ -59,9 +59,15 @@ class Conf {
     iridescence = 0.0;
     iridescenceIOR = 1.5;
 
+    runSimulation = true;
+    showVerletSprings = false;
+
     constructor() {
         const gui = new dat.GUI()
         this.gui = gui;
+
+        this.gui.add(this, "runSimulation");
+        this.gui.add(this, "showVerletSprings");
 
         const materialFolder = gui.addFolder(`Material`);
         materialFolder.add(this, "clothWidth", 0, 0.1, 0.005);

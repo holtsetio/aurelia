@@ -1,5 +1,17 @@
 import * as THREE from "three/webgpu";
-import { Fn, attribute, varying, vec3, transformNormalToView, normalMap, texture, vec2, If, uniform } from "three/tsl";
+import {
+    Fn,
+    attribute,
+    varying,
+    vec3,
+    transformNormalToView,
+    normalMap,
+    texture,
+    vec2,
+    If,
+    uniform,
+    cos, sin
+} from "three/tsl";
 
 import {MedusaVerletBridge} from "./medusaVerletBridge";
 import {noise2D, noise3D} from "../testApp/common/noise";
@@ -144,10 +156,47 @@ export class Medusa {
         })();
         Medusa.bellMarginMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
         //Medusa.bellMarginMaterial.normalNode = vNormal.normalize();
-
-
     }
 
+
+    static createTentacleMaterial(physics) {
+        Medusa.tentacleMaterial = new THREE.MeshPhysicalNodeMaterial({
+            //side: THREE.Single,
+            metalness: 0.5,
+            roughness:0.32,
+            transmission: 0.8,
+            //normalScale: new THREE.Vector2(10,-10),
+            //map: Medusa.colorMap,
+            //normalMap: Medusa.normalMap,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.5,
+            iridescence: 1.0,
+            iridescenceIOR: 1.666,
+            //opacity: 0,
+        });
+
+        const vNormal = varying(vec3(0), "v_normalView");
+        Medusa.tentacleMaterial.positionNode = Fn(() => {
+            const vertexIds = attribute('vertexIds');
+            const angle = attribute('angle');
+            const width = attribute('width');
+            const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
+            const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
+            const tangent = p1.sub(p0);
+            const bitangent = tangent.cross(vec3(1,0,0)).normalize();
+            const bitangent2 = tangent.cross(bitangent).normalize();
+
+            const normal = sin(angle).mul(bitangent).toVar();
+            normal.addAssign(cos(angle).mul(bitangent2));
+            normal.assign(normal.normalize());
+
+            const position = p0.add(p1).mul(0.5).add(normal.mul(width));
+            vNormal.assign(transformNormalToView(normal));
+            return position;
+        })();
+        //Medusa.tentacleMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
+        Medusa.tentacleMaterial.normalNode = vNormal.normalize();
+    }
 
     createBellGeometry() {
         /*const tmp0 = this.physics.addVertex({x:0,y:0,z:0}, true);
@@ -504,13 +553,17 @@ export class Medusa {
         const tentacleLength = 20;
         const tentacles = [];
         for (let x = 0; x < tentacleNum; x++) {
+            const tentacle = [];
             const springStrength = 0.005;
+
+            tentacle.push(bellMarginRows[bellMarginRows.length - 3][Math.floor(x * (bellMarginWidth / tentacleNum))]);
+            tentacle.push(bellMarginRows[bellMarginRows.length - 2][Math.floor(x * (bellMarginWidth / tentacleNum))]);
+
             const pivot = bellMarginRows[bellMarginRows.length - 1][Math.floor(x * (bellMarginWidth / tentacleNum))]
             const { offset, zenith, azimuth } = pivot;
-            const tentacle = [];
             tentacle.push(pivot);
-            const segmentLength = 0.14 + Math.random()*0.02;
-            for (let y = 1; y < tentacleLength; y++) {
+            const segmentLength = 0.24 + Math.random()*0.06;
+            for (let y = 3; y < tentacleLength; y++) {
                 const vertex = this.physics.addVertex(new THREE.Vector3(), false);
                 offset.y -= segmentLength;
                 this.bridge.registerVertex(this.medusaId, vertex, zenith, azimuth, offset.clone(), 0, false);
@@ -522,50 +575,73 @@ export class Medusa {
             }
             tentacles.push(tentacle);
         }
-        /*
-        const bellMarginVertexRows = [];
-        bellMarginVertexRows.push(vertexRows[vertexRows.length - 1]);
-        const verticesPerMarginRow = subdivisions * 5;
-        for (let i=1; i<8; i++) {
-            const vertexRow = [];
-            for (let x=0; x < verticesPerMarginRow; x++) {
 
-                const refVertex = bellMarginVertexRows[0][x];
-                const azimuth = Math.atan2(refVertex.value.x, refVertex.value.z) + (((i%2) * 0.5) / verticesPerMarginRow) * Math.PI * 2;
+        const tentaclePositionArray = [];
+        const tentacleVertexIdArray = [];
+        const tentacleWidthArray = [];
+        const tentacleAngleArray = [];
+        const tentacleIndices = [];
+        let tentacleVertexCount = 0;
+        const addTentacleVertex = (v0, v1, angle, width) => {
+            const ptr = tentacleVertexCount;
 
-                const zenith = 1;
-                //const azimuth = ((x + (i%2) * 0.5) / verticesPerMarginRow) * Math.PI * 2;
-                const offset = new THREE.Vector3(0,-i*0.05,0);
+            tentaclePositionArray[ptr * 3 + 0] = 0;
+            tentaclePositionArray[ptr * 3 + 1] = 0;
+            tentaclePositionArray[ptr * 3 + 2] = 0;
+            tentacleVertexIdArray[ptr * 2 + 0] = v0.id;
+            tentacleVertexIdArray[ptr * 2 + 1] = v1.id;
+            tentacleAngleArray[ptr] = angle;
+            tentacleWidthArray[ptr] = width;
 
-                const vertex = this.physics.addVertex(new THREE.Vector3(), false);
-                this.bridge.registerVertex(vertex, zenith, azimuth, offset, false);
-                //this.physics.addSpring(vertex, muscleVertex, 0.05, 1);
-                vertexRow.push(vertex);
-            }
-            vertexRow.push(vertexRow[0]);
-            bellMarginVertexRows.push(vertexRow);
-        }
-        for (let i=1; i<8; i++) {
-            for (let x=0; x < verticesPerMarginRow; x++) {
-                const v0 = bellMarginVertexRows[i][x];
-                const v1 = bellMarginVertexRows[i-1][x + i%2];
-                const v2 = bellMarginVertexRows[i][x+1];
-                this.physics.addSpring(v0, v1, 0.2, 1);
-                this.physics.addSpring(v1, v2, 0.2, 1);
-                this.physics.addSpring(v0, v2, 0.2, 1.0);
-                if (i === 1) {
-                    const v3 = vertexRows[vertexRows.length - 2][x];
-                    this.physics.addSpring(v0, v3, 0.2, 1);
+            tentacleVertexCount++;
+            return ptr;
+        };
+
+        const tentacleRadialSegments = 6;
+        const tentacleRadius = 0.02;
+        for (let i = 0; i < tentacleNum; i++) {
+            const tentacleVerticeRows = [];
+            for (let y = 1; y < tentacleLength; y++) {
+                const row = [];
+                const v0 = tentacles[i][y-1];
+                const v1 = tentacles[i][y];
+                for (let x = 0; x < tentacleRadialSegments; x++) {
+                    const angle = (x / tentacleRadialSegments) * Math.PI * 2;
+                    const width = Math.sqrt(1.0 - (y / (tentacleLength-1))) * tentacleRadius;
+                    const vertex = addTentacleVertex(v0,v1,angle,width);
+                    row.push(vertex);
                 }
-                if (i > 1) {
-                    const v3 = bellMarginVertexRows[i-2][x];
-                    this.physics.addSpring(v0, v3, 0.2, 1);
+                row.push(row[0]);
+                tentacleVerticeRows.push(row);
+            }
+
+            for (let y = 1; y < tentacleLength - 1; y++) {
+                for (let x = 0; x < tentacleRadialSegments; x++) {
+                    const v0 = tentacleVerticeRows[y - 1][x];
+                    const v1 = tentacleVerticeRows[y - 1][x + 1];
+                    const v2 = tentacleVerticeRows[y][x];
+                    const v3 = tentacleVerticeRows[y][x + 1];
+                    tentacleIndices.push(v2, v1, v0);
+                    tentacleIndices.push(v1, v2, v3);
                 }
             }
         }
-        console.log(vertexRows);
 
-         */
+        const tentaclePositionBuffer =  new THREE.BufferAttribute(new Float32Array(tentaclePositionArray), 3, false);
+        const tentacleVertexIdBuffer =  new THREE.BufferAttribute(new Uint32Array(tentacleVertexIdArray), 2, false);
+        const tentacleWidthBuffer =  new THREE.BufferAttribute(new Float32Array(tentacleWidthArray), 1, false);
+        const tentacleAngleBuffer =  new THREE.BufferAttribute(new Float32Array(tentacleAngleArray), 1, false);
+        const tentacleGeometry = new THREE.BufferGeometry();
+        tentacleGeometry.setAttribute('position', tentaclePositionBuffer);
+        tentacleGeometry.setAttribute('vertexIds', tentacleVertexIdBuffer);
+        tentacleGeometry.setAttribute('width', tentacleWidthBuffer);
+        tentacleGeometry.setAttribute('angle', tentacleAngleBuffer);
+        tentacleGeometry.setIndex(tentacleIndices);
+
+        this.tentacles = new THREE.Mesh(tentacleGeometry, Medusa.tentacleMaterial);
+        this.tentacles.frustumCulled = false;
+        this.object.add(this.tentacles);
+
     }
 
     async bake() {
@@ -608,6 +684,7 @@ export class Medusa {
 
         Medusa.createBellMaterial(physics);
         Medusa.createBellMarginMaterial(physics);
+        Medusa.createTentacleMaterial(physics);
     }
 
 
