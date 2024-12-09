@@ -106,7 +106,9 @@ export class Medusa {
             const tangent = vec3().toVar();
             const bitangent = vec3().toVar();
             const position = vec3().toVar();
+            const normal = vec3().toVar();
             const params = attribute('params');
+            const side = attribute('sideData');
 
             If(params.x.greaterThan(0.0), () => {
                 const zenith = params.x;
@@ -117,22 +119,27 @@ export class Medusa {
                 const p1 = Medusa.uniforms.matrix.mul(getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001))).xyz;
                 tangent.assign(p0.sub(position));
                 bitangent.assign(p1.sub(position));
-
             }).Else(() => {
                 const vertexIds = attribute('vertexIds');
                 const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
                 const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
                 const p2 = physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
                 const p3 = physics.positionData.buffer.element(vertexIds.w).xyz.toVar();
-                bitangent.assign(p0.sub(p3));
-                tangent.assign(p1.sub(p2));
-                const pos = p0.mul(0.25).add(p1.mul(0.25)).add(p2.mul(0.25)).add(p3.mul(0.25));
+                const top = p0.add(p1).mul(0.5);
+                const bottom = p2.add(p3).mul(0.5);
+                const left = p0.add(p2).mul(0.5);
+                const right = p1.add(p3).mul(0.5);
+                bitangent.assign(right.sub(left));
+                tangent.assign(bottom.sub(top));
+                const pos = top.add(bottom).mul(0.5);
                 position.assign(pos);
             });
 
+            normal.assign(tangent.cross(bitangent).normalize().mul(side.z));
+            normal.addAssign(tangent.normalize().mul(side.y));
+            position.addAssign(normal.mul(side.w));
 
-            vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
-
+            vNormal.assign(transformNormalToView(normal));
             return position;
         })();
         Medusa.bellMarginMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
@@ -147,7 +154,7 @@ export class Medusa {
         const tmp1 = this.physics.addVertex({x:0,y:0.1,z:0}, false);
         const s0 = this.physics.addSpring(tmp0,tmp1,0.3,1);*/
 
-        const subdivisions = 20; //has to be even
+        const subdivisions = 40; //has to be even
 
         const icoEdgeLength = 1.0;
         const icoCircumradius = 0.951057;
@@ -330,7 +337,7 @@ export class Medusa {
                 if (y>=1 && y <= 3) {
                     const muscleVertex = this.physics.addVertex(new THREE.Vector3(), true);
                     this.bridge.registerVertex(this.medusaId, muscleVertex, zenith, azimuth, zeroOffset, -offset.y, true);
-                    this.physics.addSpring(vertex, muscleVertex, 0.02 / Math.pow(y, 3), 0);
+                    this.physics.addSpring(vertex, muscleVertex, 0.01 / Math.pow(y, 3), 0);
                 }
             }
             row.push(row[0]);
@@ -361,12 +368,15 @@ export class Medusa {
         const marginPositionArray = [];
         const marginVertexIdArray = [];
         const marginParamsArray = [];
+        const marginSideArray = [];
+        const marginWidthArray = [];
         const marginUvArray = [];
         const marginIndices = [];
-        const marginVertexRows = [];
+        const marginOuterVertexRows = [];
+        const marginInnerVertexRows = [];
         let marginVertexCount = 0;
         const normalizeAzimuth = (a) => { return a < 0 ? a + Math.PI * 2 : a; }
-        const addMarginVertex = (referenceVertex, v0, v1, v2, v3) => {
+        const addMarginVertex = (referenceVertex, v0, v1, v2, v3, side, width) => {
             const ptr = marginVertexCount;
             let azimuth, zenith;
 
@@ -377,6 +387,7 @@ export class Medusa {
                 azimuth = (normalizeAzimuth(v0.azimuth) + normalizeAzimuth(v1.azimuth) + normalizeAzimuth(v2.azimuth) + normalizeAzimuth(v3.azimuth)) * 0.25;
                 zenith = (v0.zenith + v1.zenith + v2.zenith + v3.zenith) * 0.25;
                 zenith -= (v0.offset.y + v1.offset.y + v2.offset.y + v3.offset.y) * 0.25;
+                zenith += side.y * width;
             }
             const uvx = Math.sin(azimuth) * zenith * 4;
             const uvy = Math.cos(azimuth) * zenith * 4;
@@ -393,54 +404,87 @@ export class Medusa {
 
             marginParamsArray[ptr * 2 + 0] = referenceVertex ? zenith : 0;
             marginParamsArray[ptr * 2 + 1] = referenceVertex ? azimuth : 0;
+            marginSideArray[ptr*4+0] = side.x;
+            marginSideArray[ptr*4+1] = side.y;
+            marginSideArray[ptr*4+2] = side.z;
+            marginSideArray[ptr*4+3] = width;
 
             marginVertexCount++;
             return ptr;
         };
 
+        const outerSide = new THREE.Vector3(0,0,1);
+        const innerSide = new THREE.Vector3(0,0,-1);
+        const downSide = new THREE.Vector3(0,1,0);
+
+
+
         {
             // first bell margin row
-            const row = []
+            const innerRow = []
+            const outerRow = []
             for (let x = 0; x < bellMarginWidth; x++) {
                 const refVertex = vertexRows[vertexRows.length - 1][x];
-                const vertex = addMarginVertex(refVertex);
-                row.push(vertex);
+                const outerVertex = addMarginVertex(refVertex, null, null, null, null, outerSide, 0);
+                const innerVertex = addMarginVertex(refVertex, null, null, null, null, innerSide, 0);
+                outerRow.push(outerVertex);
+                innerRow.push(innerVertex);
             }
-            row.push(row[0]);
-            marginVertexRows.push(row);
+            outerRow.push(outerRow[0]);
+            innerRow.push(innerRow[0]);
+            marginOuterVertexRows.push(outerRow);
+            marginInnerVertexRows.push(innerRow);
         }
 
+        const downRow = [];
+        const marginDepth = 0.025;
         for (let y = 2; y < bellMarginHeight; y++) {
-            const row = []
+            const innerRow = []
+            const outerRow = []
             for (let x = 0; x < bellMarginWidth; x++) {
                 const v0 = bellMarginRows[y-1][x];
                 const v1 = bellMarginRows[y-1][x+1];
                 const v2 = bellMarginRows[y][x];
                 const v3 = bellMarginRows[y][x+1];
-                const vertex = addMarginVertex(null,v0,v1,v2,v3);
-                row.push(vertex);
+                const outerVertex = addMarginVertex(null,v0,v1,v2,v3, outerSide, (y-1) / (bellMarginHeight - 2) * marginDepth);
+                const innerVertex = addMarginVertex(null,v0,v1,v2,v3, innerSide, (y-1) / (bellMarginHeight - 2) * marginDepth);
+                outerRow.push(outerVertex);
+                innerRow.push(innerVertex);
+                if (y === bellMarginHeight - 1) {
+                    const downVertex = addMarginVertex(null,v0,v1,v2,v3, downSide, (y-1) / (bellMarginHeight - 2) * marginDepth);
+                    downRow.push(downVertex);
+                }
             }
-            row.push(row[0]);
-            marginVertexRows.push(row);
+            outerRow.push(outerRow[0]);
+            innerRow.push(innerRow[0]);
+            marginOuterVertexRows.push(outerRow);
+            marginInnerVertexRows.push(innerRow);
         }
+        downRow.push(downRow[0]);
+
+        const marginVertexRows = [...marginOuterVertexRows, downRow, ...(marginInnerVertexRows.toReversed())];
         for (let y = 1; y < marginVertexRows.length; y++) {
             for (let x = 0; x < bellMarginWidth; x++) {
-                const v0 = marginVertexRows[y-1][x];
-                const v1 = marginVertexRows[y-1][x+1];
-                const v2 = marginVertexRows[y][x];
-                const v3 = marginVertexRows[y][x+1];
-                marginIndices.push(v2,v1,v0);
-                marginIndices.push(v1,v2,v3);
+                 const v0 = marginVertexRows[y - 1][x];
+                 const v1 = marginVertexRows[y - 1][x + 1];
+                 const v2 = marginVertexRows[y][x];
+                 const v3 = marginVertexRows[y][x + 1];
+                 marginIndices.push(v2, v1, v0);
+                 marginIndices.push(v1, v2, v3);
+
             }
         }
+
         const marginPositionBuffer =  new THREE.BufferAttribute(new Float32Array(marginPositionArray), 3, false);
         const marginVertexIdBuffer =  new THREE.BufferAttribute(new Uint32Array(marginVertexIdArray), 4, false);
         const marginParamsBuffer =  new THREE.BufferAttribute(new Float32Array(marginParamsArray), 2, false);
+        const marginSideBuffer =  new THREE.BufferAttribute(new Float32Array(marginSideArray), 4, false);
         const marginUvBuffer =  new THREE.BufferAttribute(new Float32Array(marginUvArray), 2, false);
         const marginGeometry = new THREE.BufferGeometry();
         marginGeometry.setAttribute('position', marginPositionBuffer);
         marginGeometry.setAttribute('vertexIds', marginVertexIdBuffer);
         marginGeometry.setAttribute('params', marginParamsBuffer);
+        marginGeometry.setAttribute('sideData', marginSideBuffer);
         marginGeometry.setAttribute('uv', marginUvBuffer);
         marginGeometry.setIndex(marginIndices);
 
