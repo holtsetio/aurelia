@@ -36,17 +36,17 @@ class Conf {
     gui = null;
 
 
-    metalness = 0.05;
-    sheen = 1.0;
-    sheenRoughness = 0.1;
-    sheenColor = 0xFF6400;
-    clothWidth = 0.05;
+    roughness = 0.3;
+    metalness = 0.1;
+    transmission = 1.0;
+    color = 0xaaaaff;
+    iridescence = 0.0;
+    iridescenceIOR = 1.5;
+    clearcoat = 0.0;
+    clearcoatRoughness = 0.3;
+    clearcoatColor = 0xFFFFFF;
+    normalMapScale = 0.1;
 
-
-    light1 = null;
-    light2 = null;
-    light3 = null;
-    light4 = null;
     lightSeed = 0;
 
     animateLights = true;
@@ -56,8 +56,6 @@ class Conf {
     bloomRadius = 0.4;
     bloomThreshold = 0;
 
-    iridescence = 0.0;
-    iridescenceIOR = 1.5;
 
     runSimulation = true;
     showVerletSprings = false;
@@ -70,23 +68,16 @@ class Conf {
         this.gui.add(this, "showVerletSprings");
 
         const materialFolder = gui.addFolder(`Material`);
-        materialFolder.add(this, "clothWidth", 0, 0.1, 0.005);
+        materialFolder.addColor(this, "color");
+        materialFolder.add(this, "transmission", 0, 1, 0.01);
         materialFolder.add(this, "metalness", 0, 1, 0.01);
-        materialFolder.add(this, "sheen", 0, 1, 0.01);
-        materialFolder.add(this, "sheenRoughness", 0, 1, 0.01);
-        materialFolder.addColor(this, "sheenColor");
+        materialFolder.add(this, "roughness", 0, 1, 0.01);
         materialFolder.add(this, "iridescence", 0, 1, 0.01);
         materialFolder.add(this, "iridescenceIOR", 1.0, 2.333, 0.01);
-
-        this.randomizeLights();
-        const lightsFolder = gui.addFolder(`Lights`);
-        lightsFolder.addColor(this, "light1");
-        lightsFolder.addColor(this, "light2");
-        lightsFolder.addColor(this, "light3");
-        lightsFolder.addColor(this, "light4");
-        lightsFolder.add(this, "randomizeLights");
-        lightsFolder.add(this, "animateLights");
-        this.lightsFolder = lightsFolder;
+        materialFolder.add(this, "clearcoat", 0, 1, 0.01);
+        materialFolder.add(this, "clearcoatRoughness", 0, 1, 0.01);
+        materialFolder.addColor(this, "clearcoatColor");
+        materialFolder.add(this, "normalMapScale", 0, 1, 0.01);
 
 
         const postProcessingFolder = gui.addFolder(`Post Processing`);
@@ -97,27 +88,8 @@ class Conf {
         this.bloomFolder.add(this, "bloomThreshold", 0, 1, 0.01);
     }
 
-    randomizeLights() {
-        this.light1 = chroma.random().hex();
-        this.light2 = chroma.random().hex();
-        this.light3 = chroma.random().hex();
-        this.light4 = chroma.random().hex();
-        this.lightSeed = Math.random() * 100;
-        this.gui.updateDisplay();
-    }
-
     update() {
-        if (this.animateLights) {
-            const t = (performance.now() / 1000.0) * 0.03;
-            const lights = ["light1", "light2", "light3", "light4"];
-            lights.forEach((light, index) => {
-                const h = noise3D(this.lightSeed + index * 5, 0.2, t) * 360;
-                const s = noise3D(this.lightSeed + index * 5, 3.2, t) * 0.2 + 0.2;
-                const l = noise3D(this.lightSeed + index * 5, 6.2, t) * 0.2 + 0.8;
-                this[light] = chroma.hsl(h,s,l).hex();
-            });
-            this.lightsFolder.updateDisplay();
-        }
+
     }
 
 }

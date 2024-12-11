@@ -24,9 +24,10 @@ export class MedusaBellMargin {
     static createMaterial(physics) {
         MedusaBellMargin.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            metalness: 0.2,
+            metalness: 0.02,
             roughness:0.32,
-            transmission: 1.0,
+            transmission: 0.8,
+            color: new THREE.Color(),
             //normalScale: new THREE.Vector2(10,-10),
             //map: Medusa.colorMap,
             //normalMap: Medusa.normalMap,
@@ -78,7 +79,8 @@ export class MedusaBellMargin {
             vNormal.assign(transformNormalToView(normal));
             return position;
         })();
-        MedusaBellMargin.material.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
+        MedusaBellMargin.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
+        //MedusaBellMargin.material.normalNode = vNormal.normalize();
     }
 
     createGeometry() {

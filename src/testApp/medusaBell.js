@@ -14,6 +14,7 @@ import {
 import {Medusa} from "./medusa";
 import {getBellPosition} from "./medusaBellFormula";
 import {noise3D} from "./common/noise";
+import {Background} from "./background";
 
 export class MedusaBell {
     object = null;
@@ -25,16 +26,18 @@ export class MedusaBell {
     static createMaterial(physics) {
         MedusaBell.material = new THREE.MeshPhysicalNodeMaterial({
             side: THREE.DoubleSide,
-            metalness: 0.2,
-            roughness: 0.32,
+            metalness: 0.02,
+            roughness: 0.02,
             transmission: 1.0,
+            color: new THREE.Color(),
             //normalScale: new THREE.Vector2(10,-10),
             //map: Medusa.colorMap,
             //normalMap: Medusa.normalMap,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.5,
+            //clearcoat: 1.0,
+            //clearcoatRoughness: 0.5,
             iridescence: 1.0,
             iridescenceIOR: 1.666,
+            color: '#aaaaff'
             //opacity: 0.5,
         });
 
@@ -50,14 +53,16 @@ export class MedusaBell {
             return position;
         })();
 
+
+
         /*const normalMapFunc = Fn(() => {
             const dir = triNoise3D(uv().mul(0.1), float(1.5), float(0.5)).mul(Math.PI);
             const strength = triNoise3D(uv().yx.mul(0.1), float(1.5), float(0.5));
             return vec3(sin(uv().x.mul(100.0)), 0.0, 1.0).mul(0.5).add(0.5);
         })();*/
 
-        MedusaBell.material.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
-        //Medusa.bellMaterial.normalNode = vNormal.normalize();
+        MedusaBell.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
+        //MedusaBell.material.normalNode = vNormal.normalize();
         //this.material.colorNode = vNormal;
     }
 
@@ -209,7 +214,7 @@ export class MedusaBell {
 
         this.object = new THREE.Mesh(geometry, MedusaBell.material);
         this.object.frustumCulled = false;
-        this.object.renderOrder = -30;
+        //this.object.renderOrder = -30;
 
         this.vertexRows = vertexRows;
     }

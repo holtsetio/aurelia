@@ -16,6 +16,8 @@ import {Medusa} from "./medusa";
 import hdriFile from "../assets/qwantani_puresky_2k.hdr";
 import {TestGeometry} from "./testGeometry";
 import {MedusaVerletBridge} from "./medusaVerletBridge";
+import {Background} from "./background";
+import {acos, float, Fn, normalWorld, vec3, rand, uv, cameraPosition, positionWorld, rangeFog} from "three/tsl";
 
 const loadHdr = (file) => {
     return new Promise((resolve, reject) => {
@@ -53,7 +55,7 @@ class TestApp {
 
     async init(progressCallback) {
         this.renderer.init();
-        this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.01, 100);
+        this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.01, 30);
         this.camera.position.set(0, 0, -5);
         this.camera.lookAt(0, 0, 0);
         this.camera.updateProjectionMatrix();
@@ -74,11 +76,16 @@ class TestApp {
         this.scene.add(this.lights.object);
 
         const hdriTexture = await loadHdr(hdriFile);
-        this.scene.environment = hdriTexture;
+        this.background = new Background(this.renderer);
+        this.scene.environment = this.background.texture;
         this.scene.environmentIntensity = 1.0;
-        this.scene.background = hdriTexture;
-        this.scene.backgroundBlurriness = 0.3;
-        this.scene.backgroundIntensity = 0.2;
+        //this.scene.background = this.background.texture;
+        //this.scene.backgroundBlurriness = 1.0;
+        //this.scene.backgroundIntensity = 0.2;
+        this.scene.backgroundNode = Background.fogFunction;
+        this.scene.fogNode = rangeFog( Background.fogFunction, 12, 30 );
+
+
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
 
@@ -131,6 +138,9 @@ class TestApp {
         conf.update();
         this.controls.update(delta);
         this.stats.update();
+        Medusa.updateStatic();
+
+        this.background.update(elapsed);
         this.lights.update(elapsed);
         if (runSimulation) {
             await this.physics.update(delta, elapsed);

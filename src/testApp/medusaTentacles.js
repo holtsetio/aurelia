@@ -29,6 +29,7 @@ export class MedusaTentacles {
             metalness: 0.2,
             roughness:0.32,
             transmission: 1.0,
+            color: new THREE.Color(),
             //normalScale: new THREE.Vector2(10,-10),
             //map: Medusa.colorMap,
             //normalMap: Medusa.normalMap,

@@ -42,6 +42,7 @@ export class MedusaGut {
             opacity: 1.0,
             transparent: true,
             transmission: 0.01,
+            emissive: '#ff00ff',
         });
 
         const vNormal = varying(vec3(0), "v_normalView");

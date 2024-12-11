@@ -22,6 +22,7 @@ import {MedusaTentacles} from "./medusaTentacles";
 import {MedusaBellMargin} from "./medusaBellMargin";
 import {MedusaBell} from "./medusaBell";
 import {MedusaGut} from "./medusaGut";
+import {conf} from "./conf";
 
 export class Medusa {
     renderer = null;
@@ -79,10 +80,10 @@ export class Medusa {
     }
 
     updatePosition(delta, elapsed) {
-        const time = elapsed * 0.2;
-        const rotX = noise3D(this.noiseSeed, 13.37, time * 0.01) * Math.PI * 0.1;
-        const rotY = noise3D(this.noiseSeed, 12.37, time * 0.01) * Math.PI * 0.1;
-        const rotZ = noise3D(this.noiseSeed, 11.37, time * 0.01) * Math.PI * 0.1;
+        const time = elapsed * 0.1;
+        const rotX = noise3D(this.noiseSeed, 13.37, time) * Math.PI * 0.2;
+        const rotY = noise3D(this.noiseSeed, 12.37, time*0.1) * Math.PI * 0.4;
+        const rotZ = noise3D(this.noiseSeed, 11.37, time) * Math.PI * 0.2;
         this.transformationObject.rotation.set(rotX,rotY,rotZ, "XZY");
         const offset = new THREE.Vector3(0,delta,0).applyEuler(this.transformationObject.rotation);
         this.transformationObject.position.add(offset);
@@ -113,11 +114,28 @@ export class Medusa {
         Medusa.colorMap = await loadTexture(colorMapFile);
 
         Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
+        Medusa.uniforms.normalMapScale = uniform(new THREE.Vector2());
 
         MedusaBell.createMaterial(physics);
         MedusaBellMargin.createMaterial(physics);
         MedusaTentacles.createMaterial(physics);
         MedusaGut.createMaterial(physics);
+    }
+    static updateStatic() {
+        const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness, clearcoatColor, normalMapScale } = conf;
+        const materials = [MedusaBell.material, MedusaBellMargin.material, MedusaTentacles.material];
+        materials.forEach((material) => {
+           material.roughness = roughness;
+           material.metalness = metalness;
+           material.transmission = transmission;
+           material.color.setHex(color);
+           material.iridescence = iridescence;
+           material.iridescenceIOR = iridescenceIOR;
+           material.clearcoat = clearcoat;
+           material.clearcoatRoughness = clearcoatRoughness;
+           //material.clearcoatColor.setHex(clearcoatColor);
+        });
+        Medusa.uniforms.normalMapScale.value.set(normalMapScale, -normalMapScale);
     }
 
 
