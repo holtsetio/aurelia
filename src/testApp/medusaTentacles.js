@@ -126,7 +126,7 @@ export class MedusaTentacles {
                 const v1 = tentacles[i][y];
                 for (let x = 0; x < tentacleRadialSegments; x++) {
                     const angle = (x / tentacleRadialSegments) * Math.PI * 2;
-                    const width = Math.sqrt(1.0 - (y / (tentacleLength-1))) * tentacleRadius;
+                    const width = y === 1 ? 0 : Math.sqrt(1.0 - (y / (tentacleLength-1))) * tentacleRadius;
                     const vertex = addTentacleVertex(v0,v1,angle,width);
                     row.push(vertex);
                 }

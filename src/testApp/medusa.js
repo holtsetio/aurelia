@@ -21,6 +21,7 @@ import colorMapFile from '../assets/Alien_Muscle_001_COLOR.jpg';
 import {MedusaTentacles} from "./medusaTentacles";
 import {MedusaBellMargin} from "./medusaBellMargin";
 import {MedusaBell} from "./medusaBell";
+import {MedusaGut} from "./medusaGut";
 
 export class Medusa {
     renderer = null;
@@ -37,7 +38,7 @@ export class Medusa {
         this.object = new THREE.Object3D();
         this.transformationObject = new THREE.Object3D();
         this.object.add(this.transformationObject);
-        this.transformationObject.position.set(Math.random() * 5, 0, Math.random() * 5);
+        this.transformationObject.position.set(Math.random() * 10, 0, Math.random() * 10);
 
         this.noiseSeed = Math.random() * 100.0;
         this.bridge = bridge;
@@ -54,11 +55,15 @@ export class Medusa {
         this.bell = new MedusaBell(this);
         this.bellMargin = new MedusaBellMargin(this);
         this.tentacles = new MedusaTentacles(this);
+        this.gut = new MedusaGut(this);
 
         this.bell.createGeometry();
         this.bellMargin.createGeometry();
         this.tentacles.createGeometry();
-        
+        this.gut.createGeometry();
+
+
+        this.transformationObject.add(this.gut.object);
         this.transformationObject.add(this.bell.object);
         this.object.add(this.bellMargin.object);
         this.object.add(this.tentacles.object);
@@ -112,6 +117,7 @@ export class Medusa {
         MedusaBell.createMaterial(physics);
         MedusaBellMargin.createMaterial(physics);
         MedusaTentacles.createMaterial(physics);
+        MedusaGut.createMaterial(physics);
     }
 
 

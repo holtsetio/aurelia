@@ -75,8 +75,10 @@ class TestApp {
 
         const hdriTexture = await loadHdr(hdriFile);
         this.scene.environment = hdriTexture;
+        this.scene.environmentIntensity = 1.0;
         this.scene.background = hdriTexture;
         this.scene.backgroundBlurriness = 0.3;
+        this.scene.backgroundIntensity = 0.2;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
 

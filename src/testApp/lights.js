@@ -6,7 +6,7 @@ import {conf} from "./conf";
 export class Lights {
     lights = [];
 
-    lightNum = 4;
+    lightNum = 0;
 
     constructor() {
         this.object = new THREE.Object3D();
@@ -29,10 +29,10 @@ export class Lights {
 
     update(elapsed) {
         const { light1, light2, light3, light4 } = conf;
-        this.lights[0].color.set(light1);
+        /*this.lights[0].color.set(light1);
         this.lights[1].color.set(light2);
         this.lights[2].color.set(light3);
-        this.lights[3].color.set(light4);
+        this.lights[3].color.set(light4);*/
 
         const t = elapsed * 0.05;
         for (let i=0; i<this.lightNum; i++) {

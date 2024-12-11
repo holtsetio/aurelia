@@ -8,14 +8,17 @@ import {
     normalMap,
     texture,
     vec2,
-    If, triNoise3D, uv, float, sin, cos
+    uv,
+    float,
+    sqrt,
+    If, atan2, sin, cos, max
 } from "three/tsl";
 
 import {Medusa} from "./medusa";
-import {getBellPosition} from "./medusaBellFormula";
+import {getBellPosition, getGutPosition} from "./medusaBellFormula";
 import {noise3D} from "./common/noise";
 
-export class MedusaBell {
+export class MedusaGut {
     object = null;
 
     constructor(medusa) {
@@ -23,46 +26,49 @@ export class MedusaBell {
     }
 
     static createMaterial(physics) {
-        MedusaBell.material = new THREE.MeshPhysicalNodeMaterial({
+        MedusaGut.material = new THREE.MeshPhysicalNodeMaterial({
             side: THREE.DoubleSide,
-            metalness: 0.2,
-            roughness: 0.32,
-            transmission: 1.0,
+            metalness: 0.0,
+            roughness:0.32,
+            //transmission: 1.0,
+            color: '#ff00ff',
             //normalScale: new THREE.Vector2(10,-10),
             //map: Medusa.colorMap,
             //normalMap: Medusa.normalMap,
-            clearcoat: 1.0,
+            /*clearcoat: 1.0,
             clearcoatRoughness: 0.5,
             iridescence: 1.0,
-            iridescenceIOR: 1.666,
-            //opacity: 0.5,
+            iridescenceIOR: 1.666,*/
+            opacity: 1.0,
+            transparent: true,
+            transmission: 0.01,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
-        MedusaBell.material.positionNode = Fn(() => {
+        MedusaGut.material.positionNode = Fn(() => {
             const zenith = attribute('zenith');
             const azimuth = attribute('azimuth');
-            const position = getBellPosition(physics.uniforms.time, zenith, azimuth).toVar();
-            const tangent = getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
-            const bitangent = getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
+            const position = getGutPosition(physics.uniforms.time, zenith, azimuth).toVar();
+            const tangent = getGutPosition(physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
+            const bitangent = getGutPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
             vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
 
             return position;
         })();
-
-        /*const normalMapFunc = Fn(() => {
-            const dir = triNoise3D(uv().mul(0.1), float(1.5), float(0.5)).mul(Math.PI);
-            const strength = triNoise3D(uv().yx.mul(0.1), float(1.5), float(0.5));
-            return vec3(sin(uv().x.mul(100.0)), 0.0, 1.0).mul(0.5).add(0.5);
-        })();*/
-
-        MedusaBell.material.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
+        MedusaGut.material.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.1,-0.1)); //transformNormalToView(vNormal);
         //Medusa.bellMaterial.normalNode = vNormal.normalize();
-        //this.material.colorNode = vNormal;
+        MedusaGut.material.opacityNode = Fn(() => {
+            const dist = uv().length();
+            const angularPattern = max(0.0, sin(atan2(uv().y,uv().x).mul(4)).mul(0.5).add(0.3));
+            const circularPattern = cos(dist.mul(36)).mul(-0.5).add(0.5);
+            const fadeOut = float(1.0).sub(dist.mul(1.4));
+            return angularPattern.mul(circularPattern).mul(fadeOut);
+        })();
     }
 
     createGeometry() {
-        const { subdivisions, noiseSeed } = this.medusa;
+        const { noiseSeed } = this.medusa;
+        const subdivisions = 10;
 
         const icoEdgeLength = 1.0;
         const icoCircumradius = 0.951057;
@@ -88,7 +94,6 @@ export class MedusaBell {
         const indices = [];
 
         const addVertex = (position) => {
-
             const width = Math.sqrt(position.x*position.x+position.z*position.z);
             let zenith = Math.atan2(width, position.y) / (Math.PI * 0.5);
             const azimuth = Math.atan2(position.x, position.z);
@@ -97,8 +102,8 @@ export class MedusaBell {
             const noisePosY = Math.cos(azimuth) * 3;
             zenith *= 0.90 + noise3D(noiseSeed, noisePosX, noisePosY) * 0.05;
 
-            const uvx = Math.sin(azimuth) * zenith * 4;
-            const uvy = Math.cos(azimuth) * zenith * 4;
+            const uvx = Math.sin(azimuth) * zenith * 1;
+            const uvy = Math.cos(azimuth) * zenith * 1;
 
             const ptr = vertexCount;
             positionArray[ptr * 3 + 0] = position.x;
@@ -165,10 +170,10 @@ export class MedusaBell {
                     const v0 = getVertexFromTopFace(f, y, x);
                     const v1 = getVertexFromTopFace(f, y-1, x);
                     const v2 = getVertexFromTopFace(f, y, x+1);
-                    indices.push(v2,v1,v0);
+                    indices.push(v0,v1,v2);
                     if (x < y-1) {
                         const v3 = getVertexFromTopFace(f, y-1, x+1);
-                        indices.push(v1,v2,v3);
+                        indices.push(v3,v2,v1);
                     }
                 }
             }
@@ -181,16 +186,16 @@ export class MedusaBell {
                     const v1 = getVertexFromBottomDownlookingFace(f, y-1, x+1);
                     const v2 = getVertexFromBottomDownlookingFace(f, y, x+1);
                     const v3 = getVertexFromBottomDownlookingFace(f, y-1, x+2);
-                    indices.push(v2,v1,v0);
-                    indices.push(v1,v2, v3);
+                    indices.push(v0,v1,v2);
+                    indices.push(v3,v2,v1);
                 }
                 for (let x=0; x < y; x++) {
                     const v0 = getVertexFromBottomUplookingFace(f, y, x);
                     const v1 = getVertexFromBottomUplookingFace(f, y-1, x);
                     const v2 = getVertexFromBottomUplookingFace(f, y, x+1);
-                    indices.push(v2,v1,v0);
+                    indices.push(v0,v1,v2);
                     const v3 = getVertexFromBottomUplookingFace(f, y - 1, x + 1);
-                    indices.push(v1, v2, v3);
+                    indices.push(v3, v2, v1);
                 }
             }
         }
@@ -207,10 +212,9 @@ export class MedusaBell {
         geometry.setAttribute( 'uv', uvBuffer);
         geometry.setIndex(indices);
 
-        this.object = new THREE.Mesh(geometry, MedusaBell.material);
+        this.object = new THREE.Mesh(geometry, MedusaGut.material);
         this.object.frustumCulled = false;
-        this.object.renderOrder = -30;
+        this.object.renderOrder = 20;
 
-        this.vertexRows = vertexRows;
     }
 }

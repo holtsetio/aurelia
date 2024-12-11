@@ -15,3 +15,10 @@ export const getBellPosition = (time, t, angle) => {
     result.x.assign(sin(angle).mul(result.x));
     return result;
 };
+
+export const getGutPosition = (time, t, angle) => {
+    const rim = getBellPosition(time, float(1.0), angle);
+    const planePos = mix(rim.xyz, vec3(0.0, rim.y, 0.0), float(1.0).sub(t));
+    const bellPos = getBellPosition(time,t,angle);
+    return mix(planePos, bellPos, 0.95);
+};
