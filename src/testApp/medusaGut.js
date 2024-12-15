@@ -49,9 +49,9 @@ export class MedusaGut {
         MedusaGut.material.positionNode = Fn(() => {
             const zenith = attribute('zenith');
             const azimuth = attribute('azimuth');
-            const position = getGutPosition(physics.uniforms.time, zenith, azimuth).toVar();
-            const tangent = getGutPosition(physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
-            const bitangent = getGutPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
+            const position = getGutPosition(Medusa.uniforms.time, zenith, azimuth).toVar();
+            const tangent = getGutPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
+            const bitangent = getGutPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
             vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
 
             return position;
@@ -216,6 +216,10 @@ export class MedusaGut {
         this.object = new THREE.Mesh(geometry, MedusaGut.material);
         this.object.frustumCulled = false;
         this.object.renderOrder = 20;
+
+        this.object.onBeforeRender = () => {
+            Medusa.uniforms.time.value = this.medusa.time;
+        }
 
     }
 }

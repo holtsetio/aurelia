@@ -45,6 +45,7 @@ export class MedusaVerletBridge {
         this.paramsData = new WgpuBuffer(this.vertexCount, 'vec2', 2, Float32Array, "params", true); // x: zenith, y: azimuth
         this.offsetData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "offset", true); //xyz: offset, w: directionalOffset
         this.medusaTransformData = uniformArray(new Array(this.medusaCount * 4).fill(0).map(() => { return new THREE.Vector4(); }));
+        this.medusaTimeData = uniformArray(new Array(this.medusaCount).fill(0));
 
         this.medusae.forEach((medusa, index) => {
             const matrix = medusa.transformationObject.matrix;
@@ -102,15 +103,16 @@ export class MedusaVerletBridge {
                 const m3 = this.medusaTransformData.element(medusaPtr.add(3));
                 const medusaTransform = mat4(m0,m1,m2,m3);
 
+                const time = this.medusaTimeData.element(medusaId);
                 const vertexId = this.vertexIdData.buffer.element(instanceIndex);
                 const params = this.paramsData.buffer.element(instanceIndex);
 
-                const position = getBellPosition(this.physics.uniforms.time, params.x, params.y).toVar();
+                const position = getBellPosition(time, params.x, params.y).toVar();
 
                 const offset = this.offsetData.buffer.element(instanceIndex).xyz.toVar();
                 const directionalOffset = this.offsetData.buffer.element(instanceIndex).w;
                 If(abs(directionalOffset).greaterThan(0.0), () => {
-                    const p1 = getBellPosition(this.physics.uniforms.time, params.x.add(0.001), params.y);
+                    const p1 = getBellPosition(time, params.x.add(0.001), params.y);
                     const dir = p1.sub(position).normalize();
                     offset.assign(dir.mul(directionalOffset));
                 });
@@ -120,10 +122,6 @@ export class MedusaVerletBridge {
         })().compute(this.vertexCount);
         await this.physics.renderer.computeAsync(this.updatePositions);
         console.timeEnd("compileBridge");
-
-        this.uniforms.vertexCount.value = this.fixedNum;
-        this.updatePositions.count = this.fixedNum;
-        this.updatePositions.updateDispatchCount();
 
         this.isBaked = true;
         /*
@@ -206,10 +204,18 @@ export class MedusaVerletBridge {
             this.medusaTransformData.array[index*4+1].set(matrix.elements[4], matrix.elements[5], matrix.elements[6], matrix.elements[7]);
             this.medusaTransformData.array[index*4+2].set(matrix.elements[8], matrix.elements[9], matrix.elements[10], matrix.elements[11]);
             this.medusaTransformData.array[index*4+3].set(matrix.elements[12], matrix.elements[13], matrix.elements[14], matrix.elements[15]);
+            this.medusaTimeData.array[index] = medusa.time;
         });
        // this.uniforms.matrix.value = this.medusa.transformationObject.matrix;
 
         await renderer.computeAsync(this.updatePositions);
+
+        // only set vertexCount to fixedNum after first frame!
+        this.uniforms.vertexCount.value = this.fixedNum;
+        this.updatePositions.count = this.fixedNum;
+        this.updatePositions.updateDispatchCount();
+
+
         /*
         const { renderer, positionBuffer } = this.physics;
         this.material.uniforms.uTime.value = uTime;

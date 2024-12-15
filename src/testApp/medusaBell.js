@@ -37,7 +37,7 @@ export class MedusaBell {
             //clearcoatRoughness: 0.5,
             iridescence: 1.0,
             iridescenceIOR: 1.666,
-            color: '#aaaaff'
+            //color: '#aaaaff'
             //opacity: 0.5,
         });
 
@@ -45,9 +45,9 @@ export class MedusaBell {
         MedusaBell.material.positionNode = Fn(() => {
             const zenith = attribute('zenith');
             const azimuth = attribute('azimuth');
-            const position = getBellPosition(physics.uniforms.time, zenith, azimuth).toVar();
-            const tangent = getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
-            const bitangent = getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
+            const position = getBellPosition(Medusa.uniforms.time, zenith, azimuth).toVar();
+            const tangent = getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
+            const bitangent = getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
             vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
 
             return position;
@@ -215,6 +215,9 @@ export class MedusaBell {
         this.object = new THREE.Mesh(geometry, MedusaBell.material);
         this.object.frustumCulled = false;
         //this.object.renderOrder = -30;
+        this.object.onBeforeRender = () => {
+            Medusa.uniforms.time.value = this.medusa.time;
+        }
 
         this.vertexRows = vertexRows;
     }

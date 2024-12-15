@@ -1,4 +1,5 @@
-import {cos, float, mix, sin, vec3} from "three/tsl";
+import {cos, float, mix, sin, vec3, vec2} from "three/tsl";
+import {mx_perlin_noise_vec3} from "three/src/nodes/materialx/lib/mx_noise";
 
 export const getBellPosition = (time, t, angle) => {
     const phase = time.mul(0.2).mul(Math.PI*2).toVar();
@@ -13,6 +14,9 @@ export const getBellPosition = (time, t, angle) => {
     result.y.assign(cos(polarAngle).mul(yr).add(yoffset));
     result.z.assign(cos(angle).mul(result.x));
     result.x.assign(sin(angle).mul(result.x));
+
+    const noisePos = vec3(sin(angle).mul(t).mul(3.0), cos(angle).mul(t).mul(3.0), time);
+    result.addAssign(mx_perlin_noise_vec3(noisePos).mul(0.02));
     return result;
 };
 

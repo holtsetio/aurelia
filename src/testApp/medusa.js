@@ -31,6 +31,7 @@ export class Medusa {
     bridge = null;
     medusaId = -1;
     noiseSeed = 0;
+    time = 0;
     static uniforms = {};
 
     constructor(renderer, physics, bridge){
@@ -41,6 +42,7 @@ export class Medusa {
         this.object.add(this.transformationObject);
         this.transformationObject.position.set(Math.random() * 10, 0, Math.random() * 10);
 
+        this.time = Math.random() * 5;
         this.noiseSeed = Math.random() * 100.0;
         this.bridge = bridge;
         this.medusaId = this.bridge.registerMedusa(this);
@@ -80,7 +82,7 @@ export class Medusa {
     }
 
     updatePosition(delta, elapsed) {
-        const time = elapsed * 0.1;
+        const time = this.time * 0.1;
         const rotX = noise3D(this.noiseSeed, 13.37, time) * Math.PI * 0.2;
         const rotY = noise3D(this.noiseSeed, 12.37, time*0.1) * Math.PI * 0.4;
         const rotZ = noise3D(this.noiseSeed, 11.37, time) * Math.PI * 0.2;
@@ -91,6 +93,7 @@ export class Medusa {
     }
 
     async update(delta, elapsed) {
+        this.time += delta * (1.0 + noise2D(this.noiseSeed, elapsed) * 0.1);
         this.updatePosition(delta, elapsed);
         //return await this.bridge.update();
     }
@@ -114,6 +117,7 @@ export class Medusa {
         Medusa.colorMap = await loadTexture(colorMapFile);
 
         Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
+        Medusa.uniforms.time = uniform(0);
         Medusa.uniforms.normalMapScale = uniform(new THREE.Vector2());
 
         MedusaBell.createMaterial(physics);

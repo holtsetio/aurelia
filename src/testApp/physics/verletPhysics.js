@@ -21,8 +21,6 @@ export class VerletPhysics {
 
     constructor(renderer){
         this.renderer = renderer;
-
-        this.uniforms.time = uniform(0);
     }
 
     addObject(object) {
@@ -193,7 +191,6 @@ export class VerletPhysics {
         for(let i = 0; i < steps; i++){
             const dt = interval / steps;
             this.time += dt;
-            this.uniforms.time.value = this.time;
             for (let i=0; i<this.objects.length; i++){
                 await this.objects[i].update(dt, this.time);
             }

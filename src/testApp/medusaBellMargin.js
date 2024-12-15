@@ -50,10 +50,10 @@ export class MedusaBellMargin {
             If(params.x.greaterThan(0.0), () => {
                 const zenith = params.x;
                 const azimuth = params.y;
-                position.assign(getBellPosition(physics.uniforms.time, zenith, azimuth));
+                position.assign(getBellPosition(Medusa.uniforms.time, zenith, azimuth));
                 position.assign(Medusa.uniforms.matrix.mul(position).xyz);
-                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.sub(0.001))).xyz;
-                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(physics.uniforms.time, zenith.add(0.001), azimuth.add(0.001))).xyz;
+                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.sub(0.001))).xyz;
+                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.add(0.001))).xyz;
                 tangent.assign(p0.sub(position));
                 bitangent.assign(p1.sub(position));
             }).Else(() => {
@@ -267,6 +267,7 @@ export class MedusaBellMargin {
         this.object.frustumCulled = false;
 
         this.object.onBeforeRender = () => {
+            Medusa.uniforms.time.value = this.medusa.time;
             Medusa.uniforms.matrix.value.copy(this.medusa.transformationObject.matrix);
         }
 
