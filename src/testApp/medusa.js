@@ -23,6 +23,7 @@ import {MedusaBellMargin} from "./medusaBellMargin";
 import {MedusaBell} from "./medusaBell";
 import {MedusaGut} from "./medusaGut";
 import {conf} from "./conf";
+import {MedusaOralArms} from "./medusaOralArms";
 
 export class Medusa {
     renderer = null;
@@ -59,17 +60,20 @@ export class Medusa {
         this.bellMargin = new MedusaBellMargin(this);
         this.tentacles = new MedusaTentacles(this);
         this.gut = new MedusaGut(this);
+        this.arms = new MedusaOralArms(this);
 
         this.bell.createGeometry();
         this.bellMargin.createGeometry();
         this.tentacles.createGeometry();
         this.gut.createGeometry();
+        this.arms.createGeometry();
 
 
         this.transformationObject.add(this.gut.object);
         this.transformationObject.add(this.bell.object);
         this.object.add(this.bellMargin.object);
         this.object.add(this.tentacles.object);
+        this.object.add(this.arms.object);
 
         /*const ball = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshPhysicalNodeMaterial({
             color: '#ff6600',
@@ -124,10 +128,11 @@ export class Medusa {
         MedusaBellMargin.createMaterial(physics);
         MedusaTentacles.createMaterial(physics);
         MedusaGut.createMaterial(physics);
+        MedusaOralArms.createMaterial(physics);
     }
     static updateStatic() {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness, clearcoatColor, normalMapScale } = conf;
-        const materials = [MedusaBell.material, MedusaBellMargin.material, MedusaTentacles.material];
+        const materials = [MedusaBell.material, MedusaBellMargin.material, MedusaTentacles.material, MedusaOralArms.material];
         materials.forEach((material) => {
            material.roughness = roughness;
            material.metalness = metalness;
