@@ -2,7 +2,7 @@ import * as THREE from "three/webgpu";
 import {noise3D} from "./common/noise";
 import chroma from "chroma-js";
 import {conf} from "./conf";
-import {Fn, vec3, screenUV, positionWorld, cameraPosition, float, acos, normalWorld, rand} from "three/tsl";
+import {Fn, vec3, screenUV, positionWorld, cameraPosition, float, acos, normalWorld, rand, time, sin} from "three/tsl";
 
 export class Background {
 
@@ -12,11 +12,13 @@ export class Background {
 
         const camDir = positionWorld.sub(cameraPosition).normalize();
 
-        const y = float(Math.PI*0.5).sub(acos(normalWorld.y));
-        const color = colorTop.mul(camDir.y.mul(0.5).add(0.5).pow(2.0));
-        color.x.addAssign(rand(screenUV).sub(0.5).mul(1.0/255));
-        color.y.addAssign(rand(screenUV.yx).sub(0.5).mul(1.0/255));
-        color.z.addAssign(rand(screenUV.mul(1.234)).sub(0.5).mul(1.0/255));
+        const wave = sin(camDir.x.add(time.mul(0.2))).mul(0.05);
+        const y = camDir.y.mul(0.5).add(0.5).pow(2.0).add(wave);
+        const color = colorTop.mul(y);
+        const uv = screenUV.toVar();
+        color.x.addAssign(rand(uv).sub(0.5).mul(1.0/255));
+        color.y.addAssign(rand(uv.yx).sub(0.5).mul(1.0/255));
+        color.z.addAssign(rand(uv.mul(1.234)).sub(0.5).mul(1.0/255));
         return color;
     })();
 

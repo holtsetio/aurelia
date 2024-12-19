@@ -35,9 +35,9 @@ export class MedusaOralArms {
             //normalScale: new THREE.Vector2(10,-10),
             //map: Medusa.colorMap,
             //normalMap: Medusa.normalMap,
-            clearcoat: 1.0,
+            clearcoat: 0.0,
             clearcoatRoughness: 0.5,
-            iridescence: 1.0,
+            iridescence: 0.0,
             iridescenceIOR: 1.666,
             //opacity: 0,
         });
@@ -72,8 +72,8 @@ export class MedusaOralArms {
             vNormal.assign(transformNormalToView(normal));
             return position;
         })();
-        //Medusa.tentacleMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
-        MedusaOralArms.material.normalNode = vNormal.normalize();
+        MedusaOralArms.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
+        //MedusaOralArms.material.normalNode = vNormal.normalize();
     }
 
     createGeometry() {
@@ -97,7 +97,7 @@ export class MedusaOralArms {
                 offset.y -= 0.1 * (1.0 + Math.random() * 0.5);
                 for (let x = 0; x < armsWidth; x++) {
                     offset.x = (Math.random() - 0.5) * 0.1;
-                    const zenith = 0.1 + x * 0.05;
+                    const zenith = 0.2 + ((x / (armsWidth - 1) - 0.5) * 2) * (0.05 + (1.0 - y / armsLength) * 0.1);
                     const vertex = physics.addVertex(new THREE.Vector3(), y === 0);
                     bridge.registerVertex(medusaId, vertex, zenith, azimuth, offset.clone(), 0, y === 0);
                     armRow.push(vertex);
@@ -140,12 +140,11 @@ export class MedusaOralArms {
         const armsPositionArray = [];
         const armsVertexIdArray = [];
         const armsSideArray = [];
-        //const armsUvArray = [];
+        const armsUvArray = [];
         const armsIndices = [];
-        const armsVertexRows = [];
 
         let armsVertexCount = 0;
-        const addArmsVertex = (v0, v1, v2, v3, side, width) => {
+        const addArmsVertex = (v0, v1, v2, v3, side, width, uvx, uvy) => {
             const ptr = armsVertexCount;
 
             armsPositionArray[ptr * 3 + 0] = 0;
@@ -155,8 +154,8 @@ export class MedusaOralArms {
             armsVertexIdArray[ptr * 4 + 1] = v1 ? v1.id : 0;
             armsVertexIdArray[ptr * 4 + 2] = v2 ? v2.id : 0;
             armsVertexIdArray[ptr * 4 + 3] = v3 ? v3.id : 0;
-            //armsUvArray[ptr * 2 + 0] = uvx;
-            //armsUvArray[ptr * 2 + 1] = uvy;
+            armsUvArray[ptr * 2 + 0] = uvx;
+            armsUvArray[ptr * 2 + 1] = uvy;
 
             armsSideArray[ptr*4+0] = side.x;
             armsSideArray[ptr*4+1] = side.y;
@@ -181,23 +180,23 @@ export class MedusaOralArms {
                 const armVertexRow = [];
                 const backSideRow = [];
                 for (let x = 0; x < armsWidth - 1; x++) {
-                    const width = y === armsLength - 1 ? 0 : 0.02;
+                    const width = y === armsLength - 1 ? 0 : (0.02 + (1.0 - y/armsLength) * 0.02);
                     const v0 = arm[y - 1][x];
                     const v1 = arm[y - 1][x + 1];
                     const v2 = arm[y][x];
                     const v3 = arm[y][x + 1];
                     if (x === 0) {
-                        const vertex = addArmsVertex(v0, v1, v2, v3, leftSide, width);
+                        const vertex = addArmsVertex(v0, v1, v2, v3, leftSide, width, 0, y * 0.05);
                         armVertexRow.push(vertex);
                     }
                     {
-                        const vertex = addArmsVertex(v0, v1, v2, v3, outerSide, width);
+                        const vertex = addArmsVertex(v0, v1, v2, v3, outerSide, width, 0.1 + x * 0.1, y * 0.05);
                         armVertexRow.push(vertex);
-                        const backVertex = addArmsVertex(v0, v1, v2, v3, innerSide, width);
+                        const backVertex = addArmsVertex(v0, v1, v2, v3, innerSide, width, 0.1 + x * 0.1, y * 0.05);
                         backSideRow.push(backVertex);
                     }
                     if (x === armsWidth - 2) {
-                        const vertex = addArmsVertex(v0, v1, v2, v3, rightSide, width);
+                        const vertex = addArmsVertex(v0, v1, v2, v3, rightSide, width, 0.2 + x * 0.1, y * 0.05);
                         armVertexRow.push(vertex);
                     }
                 }
@@ -221,12 +220,12 @@ export class MedusaOralArms {
         const armsPositionBuffer =  new THREE.BufferAttribute(new Float32Array(armsPositionArray), 3, false);
         const armsVertexIdBuffer =  new THREE.BufferAttribute(new Uint32Array(armsVertexIdArray), 4, false);
         const armsSideBuffer =  new THREE.BufferAttribute(new Float32Array(armsSideArray), 4, false);
-        //const armsUvBuffer =  new THREE.BufferAttribute(new Float32Array(armsUvArray), 2, false);
+        const armsUvBuffer =  new THREE.BufferAttribute(new Float32Array(armsUvArray), 2, false);
         const armsGeometry = new THREE.BufferGeometry();
         armsGeometry.setAttribute('position', armsPositionBuffer);
         armsGeometry.setAttribute('vertexIds', armsVertexIdBuffer);
         armsGeometry.setAttribute('sideData', armsSideBuffer);
-        //armsGeometry.setAttribute('uv', marginUvBuffer);
+        armsGeometry.setAttribute('uv', armsUvBuffer);
         armsGeometry.setIndex(armsIndices);
 
         this.object = new THREE.Mesh(armsGeometry, MedusaOralArms.material);

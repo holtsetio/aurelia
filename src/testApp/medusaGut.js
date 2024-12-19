@@ -17,6 +17,7 @@ import {
 import {Medusa} from "./medusa";
 import {getBellPosition, getGutPosition} from "./medusaBellFormula";
 import {noise3D} from "./common/noise";
+import {mx_perlin_noise_vec3} from "three/src/nodes/materialx/lib/mx_noise";
 
 export class MedusaGut {
     object = null;
@@ -59,8 +60,9 @@ export class MedusaGut {
         MedusaGut.material.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.1,-0.1)); //transformNormalToView(vNormal);
         //Medusa.bellMaterial.normalNode = vNormal.normalize();
         MedusaGut.material.opacityNode = Fn(() => {
-            const dist = uv().length();
-            const angularPattern = max(0.0, sin(atan2(uv().y,uv().x).mul(4)).mul(0.5).add(0.3));
+            const newUv = uv();
+            const dist = newUv.length();
+            const angularPattern = max(0.0, sin(atan2(newUv.y,newUv.x).mul(4)).mul(0.5).add(0.3));
             const circularPattern = cos(dist.mul(36)).mul(-0.5).add(0.5);
             const fadeOut = float(1.0).sub(dist.mul(1.4));
             return angularPattern.mul(circularPattern).mul(fadeOut);

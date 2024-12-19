@@ -49,7 +49,10 @@ class TestApp {
 
     springVisualizer = null;
 
+    frameNum = 0;
+
     constructor(renderer){
+        console.time("firstFrame");
         this.renderer = renderer;
     }
 
@@ -108,6 +111,7 @@ class TestApp {
         this.physics.addObject(this.bridge);
         console.timeEnd("Medusae");
 
+
         console.time("Baking");
         await this.physics.bake();
         console.timeEnd("Baking");
@@ -150,7 +154,11 @@ class TestApp {
 
         this.renderer.render(this.scene, this.camera);
 
+        if (this.frameNum === 0) {
+            console.timeEnd("firstFrame");
+        }
         //console.log(this.renderer.info);
+        this.frameNum++
     }
 }
 export default TestApp;

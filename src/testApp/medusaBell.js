@@ -35,7 +35,7 @@ export class MedusaBell {
             //normalMap: Medusa.normalMap,
             //clearcoat: 1.0,
             //clearcoatRoughness: 0.5,
-            iridescence: 1.0,
+            iridescence: 0.0,
             iridescenceIOR: 1.666,
             //color: '#aaaaff'
             //opacity: 0.5,

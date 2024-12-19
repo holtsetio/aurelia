@@ -31,9 +31,9 @@ export class MedusaBellMargin {
             //normalScale: new THREE.Vector2(10,-10),
             //map: Medusa.colorMap,
             //normalMap: Medusa.normalMap,
-            clearcoat: 1.0,
+            clearcoat: 0.0,
             clearcoatRoughness: 0.5,
-            iridescence: 1.0,
+            iridescence: 0.0,
             iridescenceIOR: 1.666,
             //opacity: 0,
         });
