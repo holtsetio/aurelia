@@ -22,6 +22,9 @@ export class Background {
         return color;
     })();
 
+    static fogNear = 12;
+    static fogFar = 30;
+
     constructor(renderer) {
         /*this.renderer = renderer;
         this.renderTarget = new THREE.WebGLCubeRenderTarget( 256 );
