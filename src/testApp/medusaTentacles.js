@@ -14,6 +14,7 @@ import {
 } from "three/tsl";
 
 import {noise2D, noise3D} from "../testApp/common/noise";
+import {conf} from "./conf";
 
 
 export class MedusaTentacles {
@@ -24,20 +25,10 @@ export class MedusaTentacles {
     }
 
     static createMaterial(physics) {
+        const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaTentacles.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            metalness: 0.2,
-            roughness:0.32,
-            transmission: 1.0,
-            color: new THREE.Color(),
-            //normalScale: new THREE.Vector2(10,-10),
-            //map: Medusa.colorMap,
-            //normalMap: Medusa.normalMap,
-            clearcoat: 0.0,
-            clearcoatRoughness: 0.5,
-            iridescence: 0.0,
-            iridescenceIOR: 1.666,
-            //opacity: 0,
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
         });
 
         const vNormal = varying(vec3(0), "v_normalView");

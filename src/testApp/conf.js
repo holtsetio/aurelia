@@ -36,11 +36,11 @@ class Conf {
     gui = null;
 
 
-    roughness = 0.22;
-    metalness = 0.15;
-    transmission = 0.8;
+    roughness = 0.55;
+    metalness = 0.4;
+    transmission = 1.0;
     color = 0xf4aaff;
-    iridescence = 0.0;
+    iridescence = 0.5;
     iridescenceIOR = 1.5;
     clearcoat = 0.0;
     clearcoatRoughness = 0.3;

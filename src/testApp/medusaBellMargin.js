@@ -13,6 +13,7 @@ import {
 
 import {Medusa} from "./medusa";
 import {getBellPosition} from "./medusaBellFormula";
+import {conf} from "./conf";
 
 export class MedusaBellMargin {
     object = null;
@@ -22,20 +23,10 @@ export class MedusaBellMargin {
     }
 
     static createMaterial(physics) {
+        const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaBellMargin.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            metalness: 0.02,
-            roughness:0.32,
-            transmission: 0.8,
-            color: new THREE.Color(),
-            //normalScale: new THREE.Vector2(10,-10),
-            //map: Medusa.colorMap,
-            //normalMap: Medusa.normalMap,
-            clearcoat: 0.0,
-            clearcoatRoughness: 0.5,
-            iridescence: 0.0,
-            iridescenceIOR: 1.666,
-            //opacity: 0,
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
         });
 
         const vNormal = varying(vec3(0), "v_normalView");

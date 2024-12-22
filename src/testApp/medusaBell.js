@@ -15,6 +15,7 @@ import {Medusa} from "./medusa";
 import {getBellPosition} from "./medusaBellFormula";
 import {noise3D} from "./common/noise";
 import {Background} from "./background";
+import {conf} from "./conf";
 
 export class MedusaBell {
     object = null;
@@ -24,21 +25,10 @@ export class MedusaBell {
     }
 
     static createMaterial(physics) {
+        const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaBell.material = new THREE.MeshPhysicalNodeMaterial({
             side: THREE.DoubleSide,
-            metalness: 0.02,
-            roughness: 0.02,
-            transmission: 1.0,
-            color: new THREE.Color(),
-            //normalScale: new THREE.Vector2(10,-10),
-            //map: Medusa.colorMap,
-            //normalMap: Medusa.normalMap,
-            //clearcoat: 1.0,
-            //clearcoatRoughness: 0.5,
-            iridescence: 0.0,
-            iridescenceIOR: 1.666,
-            //color: '#aaaaff'
-            //opacity: 0.5,
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
         });
 
         const vNormal = varying(vec3(0), "v_normalView");

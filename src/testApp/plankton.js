@@ -74,7 +74,7 @@ export class Plankton {
         this.material = new THREE.MeshBasicNodeMaterial({ lights: false, transparent: true, depthWrite: false, fog: false });
         const fog = varying(float(0), 'vFog');
         this.material.vertexNode = Fn(() => {
-            const id = instanceIndex.mul(3).add(1);
+            const id = instanceIndex.mul(3).add(1).toVar();
             const pos = vec3(hash(id), hash(id.add(1)), hash(id.add(2))).mul(this.uniforms.bounds).toVar();
 
             pos.addAssign(mx_perlin_noise_vec3(vec3(pos.xy, time.mul(0.1))).mul(0.5));
@@ -94,7 +94,7 @@ export class Plankton {
 
         this.material.opacityNode = Fn(() => {
             const vUv = uv().mul(2.0).sub(1.0);
-            return vUv.length().oneMinus().max(0.0).pow(2.0).mul(fog).mul(0.05);
+            return vUv.length().oneMinus().max(0.0).pow(3.0).mul(fog).mul(0.05);
         })();
 
         const plane = new THREE.PlaneGeometry(0.1,0.1);

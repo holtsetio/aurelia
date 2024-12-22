@@ -19,6 +19,7 @@ import {MedusaVerletBridge} from "./medusaVerletBridge";
 import {Background} from "./background";
 import {acos, float, Fn, normalWorld, vec3, rand, uv, cameraPosition, positionWorld, rangeFog} from "three/tsl";
 import {Plankton} from "./plankton";
+import {Bubbles} from "./bubbles";
 
 const loadHdr = (file) => {
     return new Promise((resolve, reject) => {
@@ -129,6 +130,9 @@ class TestApp {
 
         this.plankton = new Plankton();
         this.scene.add(this.plankton.object);
+
+        this.bubbles = new Bubbles();
+        this.scene.add(this.bubbles.object);
         //this.testGeometry = new TestGeometry();
         //this.scene.add(this.testGeometry.object);
 
