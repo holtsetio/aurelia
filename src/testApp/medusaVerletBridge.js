@@ -26,12 +26,12 @@ export class MedusaVerletBridge {
         return ptr;
     }
 
-    registerVertex(medusaId, vertex, zenith, azimuth, offset, directionalOffset, fixed) {
+    registerVertex(medusaId, vertex, zenith, azimuth, isBottom, offset, directionalOffset, fixed) {
         if (this.isBaked) {
             console.error("Can't add any more vertices!");
         }
         const { id } = vertex;
-        this.vertexQueue.push({ id, medusaId, zenith, azimuth, offset, directionalOffset, fixed });
+        this.vertexQueue.push({ id, medusaId, zenith, azimuth, isBottom, offset, directionalOffset, fixed });
     }
 
     async bake() {
@@ -42,10 +42,10 @@ export class MedusaVerletBridge {
         this.vertexCount = this.vertexQueue.length;
         this.vertexIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "vertexId", true);
         this.medusaIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "medusaId", true);
-        this.paramsData = new WgpuBuffer(this.vertexCount, 'vec2', 2, Float32Array, "params", true); // x: zenith, y: azimuth
+        this.paramsData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "params", true); // x: zenith, y: azimuth, z: isBottom
         this.offsetData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "offset", true); //xyz: offset, w: directionalOffset
         this.medusaTransformData = uniformArray(new Array(this.medusaCount * 4).fill(0).map(() => { return new THREE.Vector4(); }));
-        this.medusaTimeData = uniformArray(new Array(this.medusaCount).fill(0));
+        this.medusaPhaseData = uniformArray(new Array(this.medusaCount).fill(0));
 
         this.medusae.forEach((medusa, index) => {
             const matrix = medusa.transformationObject.matrix;
@@ -61,11 +61,12 @@ export class MedusaVerletBridge {
         this.uniforms.vertexCount = uniform(this.vertexCount, "uint");
 
         this.vertexQueue.forEach((v, index) => {
-            const { id, medusaId, zenith, azimuth, offset, directionalOffset } = v;
+            const { id, medusaId, zenith, azimuth, isBottom, offset, directionalOffset } = v;
             this.vertexIdData.array[index] = id;
             this.medusaIdData.array[index] = medusaId;
-            this.paramsData.array[index * 2 + 0] = zenith;
-            this.paramsData.array[index * 2 + 1] = azimuth;
+            this.paramsData.array[index * 3 + 0] = zenith;
+            this.paramsData.array[index * 3 + 1] = azimuth;
+            this.paramsData.array[index * 3 + 2] = isBottom ? 1 : 0;
             this.offsetData.array[index * 4 + 0] = offset.x;
             this.offsetData.array[index * 4 + 1] = offset.y;
             this.offsetData.array[index * 4 + 2] = offset.z;
@@ -103,16 +104,20 @@ export class MedusaVerletBridge {
                 const m3 = this.medusaTransformData.element(medusaPtr.add(3));
                 const medusaTransform = mat4(m0,m1,m2,m3);
 
-                const time = this.medusaTimeData.element(medusaId);
+                const phase = this.medusaPhaseData.element(medusaId);
                 const vertexId = this.vertexIdData.buffer.element(instanceIndex);
                 const params = this.paramsData.buffer.element(instanceIndex);
+                const zenith = params.x;
+                const azimuth = params.y;
+                const bottomFactor = params.z;
 
-                const position = getBellPosition(time, params.x, params.y).toVar();
+
+                const position = getBellPosition(phase, zenith, azimuth, bottomFactor).toVar();
 
                 const offset = this.offsetData.buffer.element(instanceIndex).xyz.toVar();
                 const directionalOffset = this.offsetData.buffer.element(instanceIndex).w;
                 If(abs(directionalOffset).greaterThan(0.0), () => {
-                    const p1 = getBellPosition(time, params.x.add(0.001), params.y);
+                    const p1 = getBellPosition(phase, zenith.add(0.001), azimuth, bottomFactor);
                     const dir = p1.sub(position).normalize();
                     offset.assign(dir.mul(directionalOffset));
                 });
@@ -204,7 +209,7 @@ export class MedusaVerletBridge {
             this.medusaTransformData.array[index*4+1].set(matrix.elements[4], matrix.elements[5], matrix.elements[6], matrix.elements[7]);
             this.medusaTransformData.array[index*4+2].set(matrix.elements[8], matrix.elements[9], matrix.elements[10], matrix.elements[11]);
             this.medusaTransformData.array[index*4+3].set(matrix.elements[12], matrix.elements[13], matrix.elements[14], matrix.elements[15]);
-            this.medusaTimeData.array[index] = medusa.time;
+            this.medusaPhaseData.array[index] = medusa.phase;
         });
        // this.uniforms.matrix.value = this.medusa.transformationObject.matrix;
 

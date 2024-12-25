@@ -24,6 +24,7 @@ import {MedusaBell} from "./medusaBell";
 import {MedusaGut} from "./medusaGut";
 import {conf} from "./conf";
 import {MedusaOralArms} from "./medusaOralArms";
+import {MedusaBellBottom} from "./medusaBellBottom";
 
 export class Medusa {
     renderer = null;
@@ -33,6 +34,7 @@ export class Medusa {
     medusaId = -1;
     noiseSeed = 0;
     time = 0;
+    phase = 0;
     static uniforms = {};
 
     constructor(renderer, physics, bridge){
@@ -57,20 +59,23 @@ export class Medusa {
         this.subdivisions = 40; //has to be even
 
         this.bell = new MedusaBell(this);
+        this.bellBottom = new MedusaBellBottom(this);
         this.bellMargin = new MedusaBellMargin(this);
         this.tentacles = new MedusaTentacles(this);
         this.gut = new MedusaGut(this);
         this.arms = new MedusaOralArms(this);
 
         this.bell.createGeometry();
+        this.bellBottom.createGeometry();
         this.bellMargin.createGeometry();
         this.tentacles.createGeometry();
         this.gut.createGeometry();
         this.arms.createGeometry();
 
 
-        this.transformationObject.add(this.gut.object);
+        //this.transformationObject.add(this.gut.object);
         this.transformationObject.add(this.bell.object);
+        this.transformationObject.add(this.bellBottom.object);
         this.object.add(this.bellMargin.object);
         this.object.add(this.tentacles.object);
         this.object.add(this.arms.object);
@@ -91,13 +96,17 @@ export class Medusa {
         const rotY = noise3D(this.noiseSeed, 12.37, time*0.1) * Math.PI * 0.4;
         const rotZ = noise3D(this.noiseSeed, 11.37, time) * Math.PI * 0.2;
         this.transformationObject.rotation.set(rotX,rotY,rotZ, "XZY");
-        const offset = new THREE.Vector3(0,delta,0).applyEuler(this.transformationObject.rotation);
+
+        const speed = (1.0 + Math.sin(this.phase + 4.4) * 0.35) * delta;
+
+        const offset = new THREE.Vector3(0,speed,0).applyEuler(this.transformationObject.rotation);
         this.transformationObject.position.add(offset);
         this.transformationObject.updateMatrix();
     }
 
     async update(delta, elapsed) {
         this.time += delta * (1.0 + noise2D(this.noiseSeed, elapsed) * 0.1);
+        this.phase = ((this.time * 0.2) % 1.0) * Math.PI * 2;
         this.updatePosition(delta, elapsed);
         //return await this.bridge.update();
     }
@@ -121,10 +130,11 @@ export class Medusa {
         Medusa.colorMap = await loadTexture(colorMapFile);
 
         Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
-        Medusa.uniforms.time = uniform(0);
+        Medusa.uniforms.phase = uniform(0);
         Medusa.uniforms.normalMapScale = uniform(new THREE.Vector2());
 
         MedusaBell.createMaterial(physics);
+        MedusaBellBottom.createMaterial(physics);
         MedusaBellMargin.createMaterial(physics);
         MedusaTentacles.createMaterial(physics);
         MedusaGut.createMaterial(physics);
@@ -132,7 +142,7 @@ export class Medusa {
     }
     static updateStatic() {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness, clearcoatColor, normalMapScale } = conf;
-        const materials = [MedusaBell.material, MedusaBellMargin.material, MedusaTentacles.material, MedusaOralArms.material];
+        const materials = [MedusaBell.material, MedusaBellBottom.material, MedusaBellMargin.material, MedusaTentacles.material, MedusaOralArms.material];
         materials.forEach((material) => {
            material.roughness = roughness;
            material.metalness = metalness;

@@ -77,7 +77,7 @@ export class MedusaTentacles {
             for (let y = 3; y < tentacleLength; y++) {
                 const vertex = physics.addVertex(new THREE.Vector3(), false);
                 offset.y -= segmentLength;
-                bridge.registerVertex(medusaId, vertex, zenith, azimuth, offset.clone(), 0, false);
+                bridge.registerVertex(medusaId, vertex, zenith, azimuth, false, offset.clone(), 0, false);
                 physics.addSpring(tentacle[y-1], vertex, springStrength, 1);
                 if (y > 1) {
                     physics.addSpring(tentacle[y-2], vertex, springStrength, 1);

@@ -109,7 +109,6 @@ export class Plankton {
             const bounds = maxBounds.sub(minBounds).setZ(camera.far).length();
             this.uniforms.bounds.value = bounds;
             const volume = bounds*bounds*bounds;
-            console.log(bounds, volume);
             this.geometry.instanceCount = Math.floor(volume * 0.02);
         };
         this.object.renderOrder = 100;

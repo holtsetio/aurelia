@@ -82,17 +82,17 @@ export class MedusaOralArms {
             const springStrength = 0.005;
 
             const azimuth = (i / armsNum) * Math.PI * 2;
-            const offset = new THREE.Vector3(0, -0.5, 0);
+            const offset = new THREE.Vector3(0, 0, 0);
             for (let y = 0; y < armsLength; y++) {
                 const armRow = [];
-                offset.y -= 0.1 * (1.0 + Math.random() * 0.5);
                 for (let x = 0; x < armsWidth; x++) {
                     offset.x = (Math.random() - 0.5) * 0.1;
                     const zenith = 0.2 + ((x / (armsWidth - 1) - 0.5) * 2) * (0.05 + (1.0 - y / armsLength) * 0.1);
                     const vertex = physics.addVertex(new THREE.Vector3(), y === 0);
-                    bridge.registerVertex(medusaId, vertex, zenith, azimuth, offset.clone(), 0, y === 0);
+                    bridge.registerVertex(medusaId, vertex, zenith, azimuth, true, offset.clone(), 0, y === 0);
                     armRow.push(vertex);
                 }
+                offset.y -= 0.1 * (1.0 + Math.random() * 0.5);
                 arm.push(armRow);
             }
             arms.push(arm);

@@ -27,7 +27,7 @@ export class MedusaBell {
     static createMaterial(physics) {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaBell.material = new THREE.MeshPhysicalNodeMaterial({
-            side: THREE.DoubleSide,
+            //side: THREE.DoubleSide,
             roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
         });
 
@@ -35,9 +35,9 @@ export class MedusaBell {
         MedusaBell.material.positionNode = Fn(() => {
             const zenith = attribute('zenith');
             const azimuth = attribute('azimuth');
-            const position = getBellPosition(Medusa.uniforms.time, zenith, azimuth).toVar();
-            const tangent = getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.sub(0.001)).sub(position);
-            const bitangent = getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.add(0.001)).sub(position);
+            const position = getBellPosition(Medusa.uniforms.phase, zenith, azimuth, 0.0).toVar();
+            const tangent = getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.001), 0.0).sub(position);
+            const bitangent = getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.add(0.001), 0.0).sub(position);
             vNormal.assign(transformNormalToView(tangent.cross(bitangent).normalize()));
 
             return position;
@@ -90,7 +90,7 @@ export class MedusaBell {
 
             const noisePosX = Math.sin(azimuth) * 3;
             const noisePosY = Math.cos(azimuth) * 3;
-            zenith *= 0.90 + noise3D(noiseSeed, noisePosX, noisePosY) * 0.05;
+            //zenith *= 0.90 + noise3D(noiseSeed, noisePosX, noisePosY) * 0.05;
 
             const uvx = Math.sin(azimuth) * zenith * 4;
             const uvy = Math.cos(azimuth) * zenith * 4;
@@ -206,7 +206,7 @@ export class MedusaBell {
         this.object.frustumCulled = false;
         //this.object.renderOrder = -30;
         this.object.onBeforeRender = () => {
-            Medusa.uniforms.time.value = this.medusa.time;
+            Medusa.uniforms.phase.value = this.medusa.phase;
         }
 
         this.vertexRows = vertexRows;

@@ -41,10 +41,10 @@ export class MedusaBellMargin {
             If(params.x.greaterThan(0.0), () => {
                 const zenith = params.x;
                 const azimuth = params.y;
-                position.assign(getBellPosition(Medusa.uniforms.time, zenith, azimuth));
+                position.assign(getBellPosition(Medusa.uniforms.phase, zenith, azimuth, 0.0));
                 position.assign(Medusa.uniforms.matrix.mul(position).xyz);
-                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.sub(0.001))).xyz;
-                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.time, zenith.add(0.001), azimuth.add(0.001))).xyz;
+                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.001), 0.0)).xyz;
+                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.add(0.001), 0.0)).xyz;
                 tangent.assign(p0.sub(position));
                 bitangent.assign(p1.sub(position));
             }).Else(() => {
@@ -98,14 +98,14 @@ export class MedusaBellMargin {
                 vertex.offset = offset.clone();
                 vertex.zenith = zenith;
                 vertex.azimuth = azimuth;
-                bridge.registerVertex(medusaId, vertex, zenith, azimuth, offset.clone(), 0, y === 0);
+                bridge.registerVertex(medusaId, vertex, zenith, azimuth, false, offset.clone(), 0, y === 0);
                 row.push(vertex);
 
                 //muscle vertex
                 const zeroOffset = new THREE.Vector3(0,0,0);
                 if (y>=1 && y <= 3) {
                     const muscleVertex = physics.addVertex(new THREE.Vector3(), true);
-                    bridge.registerVertex(medusaId, muscleVertex, zenith, azimuth, zeroOffset, -offset.y, true);
+                    bridge.registerVertex(medusaId, muscleVertex, zenith, azimuth, false, zeroOffset, -offset.y, true);
                     physics.addSpring(vertex, muscleVertex, 0.01 / Math.pow(y, 3), 0);
                 }
             }
@@ -258,7 +258,7 @@ export class MedusaBellMargin {
         this.object.frustumCulled = false;
 
         this.object.onBeforeRender = () => {
-            Medusa.uniforms.time.value = this.medusa.time;
+            Medusa.uniforms.phase.value = this.medusa.phase;
             Medusa.uniforms.matrix.value.copy(this.medusa.transformationObject.matrix);
         }
 
