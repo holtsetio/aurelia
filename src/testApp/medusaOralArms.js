@@ -10,7 +10,7 @@ import {
     vec2,
     If,
     uniform,
-    cos, sin
+    cos, sin, uv, smoothstep
 } from "three/tsl";
 
 import {noise2D, noise3D} from "../testApp/common/noise";
@@ -29,8 +29,10 @@ export class MedusaOralArms {
     static createMaterial(physics) {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaOralArms.material = new THREE.MeshPhysicalNodeMaterial({
-            //side: THREE.Single,
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
+            //side: THREE.DoubleSide,
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            opacity: 0.99,
+            transparent: true,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
@@ -64,6 +66,9 @@ export class MedusaOralArms {
             return position;
         })();
         MedusaOralArms.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
+        MedusaOralArms.material.opacityNode = Fn(() => {
+            return smoothstep(0.05, 0.10, uv().y);
+        })();
         //MedusaOralArms.material.normalNode = vNormal.normalize();
     }
 
@@ -82,7 +87,7 @@ export class MedusaOralArms {
             const springStrength = 0.005;
 
             const azimuth = (i / armsNum) * Math.PI * 2;
-            const offset = new THREE.Vector3(0, 0, 0);
+            const offset = new THREE.Vector3(0, 0.05, 0);
             for (let y = 0; y < armsLength; y++) {
                 const armRow = [];
                 for (let x = 0; x < armsWidth; x++) {
@@ -221,5 +226,6 @@ export class MedusaOralArms {
 
         this.object = new THREE.Mesh(armsGeometry, MedusaOralArms.material);
         this.object.frustumCulled = false;
+        this.object.renderOrder = 30;
     }
 }
