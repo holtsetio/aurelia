@@ -17,7 +17,11 @@ export const getBellPosition = (phase, zenith, azimuth, bottomFactor = 0) => {
     const modifiedPhase = phase.toVar();
     modifiedPhase.subAssign(mix(0.0, modifiedZenith.mul(0.95), modifiedZenith));
     modifiedPhase.addAssign(Math.PI * 0.5);
-    const xr = sin(modifiedPhase).mul(0.3).add(1.3);
+    const xr = sin(modifiedPhase).mul(0.3).add(1.3).toVar();
+
+    const riffles = mix(1.0, sin(azimuth.mul(12.0)).mul(0.02).add(1.0), smoothstep(0.5,1.0,zenith));
+
+    xr.mulAssign(riffles);
     const yr = float(1.0);
     const polarAngle = sin(modifiedPhase.add(3.0)).mul(0.15).add(0.5).mul(modifiedZenith).mul(Math.PI);
     const result = vec3(0).toVar();
@@ -29,7 +33,7 @@ export const getBellPosition = (phase, zenith, azimuth, bottomFactor = 0) => {
     const noisePos = vec3(sinAzimuth.mul(modifiedZenith).mul(3.0), cosAzimuth.mul(modifiedZenith).mul(3.0), time);
     result.addAssign(mx_perlin_noise_vec3(noisePos).mul(0.02));
 
-    const mixFactor = smoothstep(0.0, 0.9, zenith.oneMinus()).mul(0.5).mul(bottomFactor);
+    const mixFactor = smoothstep(0.0, 0.95, zenith.oneMinus()).mul(0.4).mul(bottomFactor);
     result.y.assign(mix(result.y, 0.0, mixFactor));
 
     return result;

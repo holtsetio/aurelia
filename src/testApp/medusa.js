@@ -25,6 +25,7 @@ import {MedusaGut} from "./medusaGut";
 import {conf} from "./conf";
 import {MedusaOralArms} from "./medusaOralArms";
 import {MedusaBellBottom} from "./medusaBellBottom";
+import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
 
 export class Medusa {
     renderer = null;
@@ -62,14 +63,14 @@ export class Medusa {
         this.bellBottom = new MedusaBellBottom(this);
         this.bellMargin = new MedusaBellMargin(this);
         this.tentacles = new MedusaTentacles(this);
-        this.gut = new MedusaGut(this);
+        //this.gut = new MedusaGut(this);
         this.arms = new MedusaOralArms(this);
 
         this.bell.createGeometry();
         this.bellBottom.createGeometry();
         this.bellMargin.createGeometry();
         this.tentacles.createGeometry();
-        this.gut.createGeometry();
+        //this.gut.createGeometry();
         this.arms.createGeometry();
 
 
@@ -137,8 +138,10 @@ export class Medusa {
         MedusaBellBottom.createMaterial(physics);
         MedusaBellMargin.createMaterial(physics);
         MedusaTentacles.createMaterial(physics);
-        MedusaGut.createMaterial(physics);
+        //MedusaGut.createMaterial(physics);
         MedusaOralArms.createMaterial(physics);
+
+        MedusaTentacleHighlights.createMaterial(physics);
     }
     static updateStatic() {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness, clearcoatColor, normalMapScale } = conf;

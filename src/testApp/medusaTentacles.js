@@ -15,6 +15,7 @@ import {
 
 import {noise2D, noise3D} from "../testApp/common/noise";
 import {conf} from "./conf";
+import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
 
 
 export class MedusaTentacles {
@@ -22,13 +23,14 @@ export class MedusaTentacles {
 
     constructor(medusa) {
         this.medusa = medusa;
+        this.highlights = new MedusaTentacleHighlights(medusa);
     }
 
     static createMaterial(physics) {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaTentacles.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
@@ -52,6 +54,7 @@ export class MedusaTentacles {
         })();
         //Medusa.tentacleMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
         MedusaTentacles.material.normalNode = vNormal.normalize();
+
     }
 
     createGeometry() {
@@ -68,9 +71,11 @@ export class MedusaTentacles {
             const springStrength = 0.005;
 
             tentacle.push(bellMarginRows[bellMarginRows.length - 3][Math.floor(x * (bellMarginWidth / tentacleNum))]);
-            tentacle.push(bellMarginRows[bellMarginRows.length - 2][Math.floor(x * (bellMarginWidth / tentacleNum))]);
 
-            const pivot = bellMarginRows[bellMarginRows.length - 1][Math.floor(x * (bellMarginWidth / tentacleNum))]
+            const prePivot = bellMarginRows[bellMarginRows.length - 2][Math.floor(x * (bellMarginWidth / tentacleNum))];
+            tentacle.push(prePivot);
+
+            const pivot = bellMarginRows[bellMarginRows.length - 1][Math.floor(x * (bellMarginWidth / tentacleNum))];
             const { offset, zenith, azimuth } = pivot;
             tentacle.push(pivot);
             const segmentLength = 0.24 + Math.random()*0.06;
@@ -86,6 +91,7 @@ export class MedusaTentacles {
             }
             tentacles.push(tentacle);
         }
+        this.tentacles = tentacles;
 
         const tentaclePositionArray = [];
         const tentacleVertexIdArray = [];
@@ -151,5 +157,8 @@ export class MedusaTentacles {
 
         this.object = new THREE.Mesh(tentacleGeometry, MedusaTentacles.material);
         this.object.frustumCulled = false;
+
+        this.highlights.createGeometry();
+        this.object.add(this.highlights.object);
     }
 }
