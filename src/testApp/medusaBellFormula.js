@@ -19,7 +19,7 @@ export const getBellPosition = (phase, zenith, azimuth, bottomFactor = 0) => {
     modifiedPhase.addAssign(Math.PI * 0.5);
     const xr = sin(modifiedPhase).mul(0.3).add(1.3).toVar();
 
-    const riffles = mix(1.0, sin(azimuth.mul(12.0)).mul(0.02).add(1.0), smoothstep(0.5,1.0,zenith));
+    const riffles = mix(1.0, sin(azimuth.mul(16.0).add(0.5*Math.PI)).mul(0.02).add(1.0), smoothstep(0.5,1.0,zenith));
 
     xr.mulAssign(riffles);
     const yr = float(1.0);

@@ -10,7 +10,7 @@ import {
     vec2,
     If,
     uniform,
-    cos, sin
+    cos, sin, sqrt, smoothstep, uv, float, min, mix
 } from "three/tsl";
 
 import {noise2D, noise3D} from "../testApp/common/noise";
@@ -26,6 +26,7 @@ import {conf} from "./conf";
 import {MedusaOralArms} from "./medusaOralArms";
 import {MedusaBellBottom} from "./medusaBellBottom";
 import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
+import {mx_perlin_noise_float} from "three/src/nodes/materialx/lib/mx_noise";
 
 export class Medusa {
     renderer = null;
@@ -134,6 +135,7 @@ export class Medusa {
         Medusa.uniforms.phase = uniform(0);
         Medusa.uniforms.normalMapScale = uniform(new THREE.Vector2());
 
+        Medusa.createColorNode();
         MedusaBell.createMaterial(physics);
         MedusaBellBottom.createMaterial(physics);
         MedusaBellMargin.createMaterial(physics);
@@ -142,7 +144,55 @@ export class Medusa {
         MedusaOralArms.createMaterial(physics);
 
         MedusaTentacleHighlights.createMaterial(physics);
+
     }
+
+    static createColorNode() {
+        const vUv = uv().mul(0.8);
+        const seamCircles = () => {
+            const a = attribute('azimuth').div(Math.PI).mul(10).mod(0.5).sub(0.25);
+            const b = attribute('zenith').sub(1.22).mul(4);
+            const dist = sqrt(a.mul(a).add(b.mul(b)));
+            return smoothstep(0.18,0.24,dist);
+        }
+        const speckles = () => {
+            const noiseRaw = mx_perlin_noise_float(uv().mul(100));
+            const noise = smoothstep(-0.22, -0.16, noiseRaw);
+            const d = vUv.length();
+            const fade = smoothstep(0.7, 0.9, d);
+            return noise.max(fade);
+        };
+        const verticalLines = () => {
+            const a = attribute('azimuth').div(Math.PI).mul(4).mod(0.5).sub(0.25).toVar();
+            const noise = mx_perlin_noise_float(vUv.mul(6));
+            a.addAssign(noise.mul(0.1));
+
+            const d = vUv.length();
+            const fade0 = smoothstep(0.2, 0.25, d);
+            a.mulAssign(fade0);
+            const fade1 = smoothstep(0.6, 0.85, d).oneMinus();
+            a.mulAssign(fade1);
+
+            const line = smoothstep(0.02,0.08,a.abs());
+
+            const fade2 = smoothstep(0.80, 0.86, d.add(noise.mul(0.03)));
+            const innerCircle = smoothstep(0.15, 0.2, d).oneMinus();
+
+            return line.max(fade2).max(innerCircle);
+        };
+        Medusa.colorNode = Fn(() => {
+            const white = vec3(1,1,1);
+            const orange = vec3(1,0.5,0.1);
+
+            const value = float(1).toVar();
+            value.assign(min(value, seamCircles()));
+            value.assign(min(value, speckles()));
+            value.assign(min(value, verticalLines()));
+
+            return mix(orange,white,value);
+        })();
+    }
+
     static updateStatic() {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness, clearcoatColor, normalMapScale } = conf;
         const materials = [MedusaBell.material, MedusaBellBottom.material, MedusaBellMargin.material, MedusaTentacles.material, MedusaOralArms.material];
@@ -159,6 +209,7 @@ export class Medusa {
         });
         Medusa.uniforms.normalMapScale.value.set(normalMapScale, -normalMapScale);
     }
+
 
 
 }

@@ -8,7 +8,7 @@ import {
     normalMap,
     texture,
     vec2,
-    If, triNoise3D, uv, float, sin, cos
+    If, triNoise3D, uv, float, sin, cos, sqrt, mix, smoothstep, min
 } from "three/tsl";
 
 import {Medusa} from "./medusa";
@@ -16,6 +16,7 @@ import {getBellPosition} from "./medusaBellFormula";
 import {noise3D} from "./common/noise";
 import {Background} from "./background";
 import {conf} from "./conf";
+import {mx_perlin_noise_float} from "three/src/nodes/materialx/lib/mx_noise";
 
 export class MedusaBell {
     object = null;
@@ -28,13 +29,19 @@ export class MedusaBell {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaBell.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.DoubleSide,
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            opacity:0.9,
+            transparent: true,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
+        const vZenith = varying(float(0), "vZenith");
+        const vAzimuth = varying(float(0), "vAzimuth");
         MedusaBell.material.positionNode = Fn(() => {
             const zenith = attribute('zenith');
             const azimuth = attribute('azimuth');
+            vZenith.assign(zenith);
+            vAzimuth.assign(azimuth);
             const position = getBellPosition(Medusa.uniforms.phase, zenith, azimuth, 0.0).toVar();
             const tangent = getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.001), 0.0).sub(position);
             const bitangent = getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.add(0.001), 0.0).sub(position);
@@ -42,6 +49,20 @@ export class MedusaBell {
 
             return position;
         })();
+
+
+
+        MedusaBell.material.colorNode = Medusa.colorNode;
+
+        /*
+        MedusaBell.material.thicknessColorNode = Fn(() => {
+           return uv().length().div(4.0).oneMinus();
+        })();
+        MedusaBell.material.thicknessDistortionNode = float( 0.1 );
+        MedusaBell.material.thicknessAmbientNode = float( 0.0 );
+        MedusaBell.material.thicknessAttenuationNode = float( .8 );
+        MedusaBell.material.thicknessPowerNode = float( 2.0 );
+        MedusaBell.material.thicknessScaleNode = float( 1.0 );*/
 
 
 
@@ -92,8 +113,8 @@ export class MedusaBell {
             const noisePosY = Math.cos(azimuth) * 3;
             //zenith *= 0.90 + noise3D(noiseSeed, noisePosX, noisePosY) * 0.05;
 
-            const uvx = Math.sin(azimuth) * zenith * 4;
-            const uvy = Math.cos(azimuth) * zenith * 4;
+            const uvx = Math.sin(azimuth) * zenith * 1;
+            const uvy = Math.cos(azimuth) * zenith * 1;
 
             const ptr = vertexCount;
             positionArray[ptr * 3 + 0] = position.x;

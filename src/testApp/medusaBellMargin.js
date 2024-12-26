@@ -8,6 +8,7 @@ import {
     normalMap,
     texture,
     vec2,
+    uint,
     If
 } from "three/tsl";
 
@@ -26,7 +27,9 @@ export class MedusaBellMargin {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaBellMargin.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            opacity:0.9,
+            transparent: true,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
@@ -35,12 +38,12 @@ export class MedusaBellMargin {
             const bitangent = vec3().toVar();
             const position = vec3().toVar();
             const normal = vec3().toVar();
-            const params = attribute('params');
+            const zenith = attribute('zenith');
+            const azimuth = attribute('azimuth');
             const side = attribute('sideData');
+            const vertexIds = attribute('vertexIds');
 
-            If(params.x.greaterThan(0.0), () => {
-                const zenith = params.x;
-                const azimuth = params.y;
+            If(vertexIds.x.equal(uint(0)), () => {
                 position.assign(getBellPosition(Medusa.uniforms.phase, zenith, azimuth, 0.0));
                 position.assign(Medusa.uniforms.matrix.mul(position).xyz);
                 const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.001), 0.0)).xyz;
@@ -48,7 +51,6 @@ export class MedusaBellMargin {
                 tangent.assign(p0.sub(position));
                 bitangent.assign(p1.sub(position));
             }).Else(() => {
-                const vertexIds = attribute('vertexIds');
                 const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
                 const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
                 const p2 = physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
@@ -72,8 +74,9 @@ export class MedusaBellMargin {
         })();
         MedusaBellMargin.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         //MedusaBellMargin.material.normalNode = vNormal.normalize();
-    }
 
+        MedusaBellMargin.material.colorNode = Medusa.colorNode;
+    }
     createGeometry() {
         const { bell, subdivisions, physics, bridge, medusaId } = this.medusa;
         const { vertexRows } = bell;
@@ -136,7 +139,8 @@ export class MedusaBellMargin {
 
         const marginPositionArray = [];
         const marginVertexIdArray = [];
-        const marginParamsArray = [];
+        const marginZenithArray = [];
+        const marginAzimuthArray = [];
         const marginSideArray = [];
         const marginUvArray = [];
         const marginIndices = [];
@@ -157,8 +161,8 @@ export class MedusaBellMargin {
                 zenith -= (v0.offset.y + v1.offset.y + v2.offset.y + v3.offset.y) * 0.25;
                 zenith += side.y * width;
             }
-            const uvx = Math.sin(azimuth) * zenith * 4;
-            const uvy = Math.cos(azimuth) * zenith * 4;
+            const uvx = Math.sin(azimuth) * zenith * 1;
+            const uvy = Math.cos(azimuth) * zenith * 1;
 
             marginPositionArray[ptr * 3 + 0] = 0;
             marginPositionArray[ptr * 3 + 1] = 0;
@@ -170,8 +174,8 @@ export class MedusaBellMargin {
             marginUvArray[ptr * 2 + 0] = uvx;
             marginUvArray[ptr * 2 + 1] = uvy;
 
-            marginParamsArray[ptr * 2 + 0] = referenceVertex ? zenith : 0;
-            marginParamsArray[ptr * 2 + 1] = referenceVertex ? azimuth : 0;
+            marginZenithArray[ptr] = zenith;
+            marginAzimuthArray[ptr] = azimuth;
             marginSideArray[ptr*4+0] = side.x;
             marginSideArray[ptr*4+1] = side.y;
             marginSideArray[ptr*4+2] = side.z;
@@ -243,13 +247,15 @@ export class MedusaBellMargin {
 
         const marginPositionBuffer =  new THREE.BufferAttribute(new Float32Array(marginPositionArray), 3, false);
         const marginVertexIdBuffer =  new THREE.BufferAttribute(new Uint32Array(marginVertexIdArray), 4, false);
-        const marginParamsBuffer =  new THREE.BufferAttribute(new Float32Array(marginParamsArray), 2, false);
+        const marginZenithBuffer =  new THREE.BufferAttribute(new Float32Array(marginZenithArray), 1, false);
+        const marginAzimuthBuffer =  new THREE.BufferAttribute(new Float32Array(marginAzimuthArray), 1, false);
         const marginSideBuffer =  new THREE.BufferAttribute(new Float32Array(marginSideArray), 4, false);
         const marginUvBuffer =  new THREE.BufferAttribute(new Float32Array(marginUvArray), 2, false);
         const marginGeometry = new THREE.BufferGeometry();
         marginGeometry.setAttribute('position', marginPositionBuffer);
         marginGeometry.setAttribute('vertexIds', marginVertexIdBuffer);
-        marginGeometry.setAttribute('params', marginParamsBuffer);
+        marginGeometry.setAttribute('zenith', marginZenithBuffer);
+        marginGeometry.setAttribute('azimuth', marginAzimuthBuffer);
         marginGeometry.setAttribute('sideData', marginSideBuffer);
         marginGeometry.setAttribute('uv', marginUvBuffer);
         marginGeometry.setIndex(marginIndices);
