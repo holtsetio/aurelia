@@ -60,8 +60,8 @@ export class MedusaTentacles {
     }
 
     createGeometry() {
-        const { bellMargin, physics, medusaId, bridge } = this.medusa;
-        const { bellMarginRows, bellMarginWidth } = bellMargin;
+        const { bell, physics, medusaId, bridge } = this.medusa;
+        const { bellMarginRows, bellMarginWidth } = bell.margin;
         /* ##################################
         tentacles
         #################################### */

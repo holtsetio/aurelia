@@ -1,16 +1,13 @@
 import * as THREE from "three/webgpu";
 
-export class MedusaBellBottom {
-    object = null;
-
+export class MedusaBellTop {
     constructor(medusa) {
         this.medusa = medusa;
     }
 
     createGeometry() {
-        const { bell } = this.medusa;
-        const { geometryInside } = bell;
-        const subdivisions = 40;
+        const { subdivisions, bell } = this.medusa;
+        const { geometryOutside } = bell;
 
         const icoEdgeLength = 1.0;
         const icoCircumradius = 0.951057;
@@ -33,7 +30,7 @@ export class MedusaBellBottom {
             let zenith = Math.atan2(width, position.y) / (Math.PI * 0.5);
             const azimuth = Math.atan2(position.x, position.z);
 
-            const ptr = geometryInside.addVertexFromParams(zenith, azimuth, {x: 0, y: 0, z: -1}, 0, 1);
+            const ptr = geometryOutside.addVertexFromParams(zenith, azimuth);
             return { ptr, azimuth, zenith };
         };
 
@@ -89,10 +86,10 @@ export class MedusaBellBottom {
                     const v0 = getVertexFromTopFace(f, y, x);
                     const v1 = getVertexFromTopFace(f, y-1, x);
                     const v2 = getVertexFromTopFace(f, y, x+1);
-                    geometryInside.addFace(v0,v1,v2);
+                    geometryOutside.addFace(v2,v1,v0);
                     if (x < y-1) {
                         const v3 = getVertexFromTopFace(f, y-1, x+1);
-                        geometryInside.addFace(v3,v2,v1);
+                        geometryOutside.addFace(v1,v2,v3);
                     }
                 }
             }
@@ -105,19 +102,20 @@ export class MedusaBellBottom {
                     const v1 = getVertexFromBottomDownlookingFace(f, y-1, x+1);
                     const v2 = getVertexFromBottomDownlookingFace(f, y, x+1);
                     const v3 = getVertexFromBottomDownlookingFace(f, y-1, x+2);
-                    geometryInside.addFace(v0,v1,v2);
-                    geometryInside.addFace(v3,v2,v1);
+                    geometryOutside.addFace(v2,v1,v0);
+                    geometryOutside.addFace(v1,v2, v3);
                 }
                 for (let x=0; x < y; x++) {
                     const v0 = getVertexFromBottomUplookingFace(f, y, x);
                     const v1 = getVertexFromBottomUplookingFace(f, y-1, x);
                     const v2 = getVertexFromBottomUplookingFace(f, y, x+1);
-                    geometryInside.addFace(v0,v1,v2);
+                    geometryOutside.addFace(v2,v1,v0);
                     const v3 = getVertexFromBottomUplookingFace(f, y - 1, x + 1);
-                    geometryInside.addFace(v3, v2, v1);
+                    geometryOutside.addFace(v1, v2, v3);
                 }
             }
         }
-        //this.object.renderOrder = 20;
+
+        this.vertexRows = vertexRows;
     }
 }
