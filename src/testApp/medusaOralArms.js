@@ -67,8 +67,10 @@ export class MedusaOralArms {
         })();
         MedusaOralArms.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         MedusaOralArms.material.opacityNode = Fn(() => {
-            return smoothstep(0.05, 0.10, uv().y);
+            return smoothstep(0.05, 0.20, uv().y);
         })();
+
+        MedusaOralArms.material.emissiveNode = Medusa.emissiveNode;
         //MedusaOralArms.material.normalNode = vNormal.normalize();
     }
 

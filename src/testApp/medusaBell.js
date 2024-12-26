@@ -8,7 +8,7 @@ import {
     normalMap,
     texture,
     vec2,
-    If, triNoise3D, uv, float, sin, cos, sqrt, mix, smoothstep, min
+    If, triNoise3D, uv, float, sin, cos, sqrt, mix, smoothstep, min, materialColor
 } from "three/tsl";
 
 import {Medusa} from "./medusa";
@@ -30,7 +30,7 @@ export class MedusaBell {
         MedusaBell.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.DoubleSide,
             roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
-            opacity:0.9,
+            opacity:0.8,
             transparent: true,
         });
 
@@ -51,9 +51,12 @@ export class MedusaBell {
         })();
 
 
-
         MedusaBell.material.colorNode = Medusa.colorNode;
-
+        MedusaBell.material.emissiveNode = Medusa.emissiveNode;
+        MedusaBell.material.metalnessNode = Fn(() => {
+            const metalness = float().toVar("medusaMetalness");
+            return metalness.mul(0.5).add(0.25);
+        })();
         /*
         MedusaBell.material.thicknessColorNode = Fn(() => {
            return uv().length().div(4.0).oneMinus();
@@ -71,6 +74,7 @@ export class MedusaBell {
             const strength = triNoise3D(uv().yx.mul(0.1), float(1.5), float(0.5));
             return vec3(sin(uv().x.mul(100.0)), 0.0, 1.0).mul(0.5).add(0.5);
         })();*/
+
 
         MedusaBell.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         //MedusaBell.material.normalNode = vNormal.normalize();

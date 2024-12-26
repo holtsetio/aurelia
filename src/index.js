@@ -14,7 +14,7 @@ const updateLoadingProgressBar = async (frac, delay=200) => {
 const createRenderer = () => {
   const renderer = new THREE.WebGPURenderer({
     //forceWebGL: true,
-    antialias: true,
+    //antialias: true,
   });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);

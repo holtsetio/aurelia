@@ -16,6 +16,7 @@ import {
 import {noise2D, noise3D} from "../testApp/common/noise";
 import {conf} from "./conf";
 import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
+import {Medusa} from "./medusa";
 
 
 export class MedusaTentacles {
@@ -54,6 +55,7 @@ export class MedusaTentacles {
         })();
         //Medusa.tentacleMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
         MedusaTentacles.material.normalNode = vNormal.normalize();
+        MedusaTentacles.material.emissiveNode = Medusa.emissiveNode;
 
     }
 

@@ -28,7 +28,7 @@ export class MedusaBellMargin {
         MedusaBellMargin.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
             roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
-            opacity:0.9,
+            opacity:0.8,
             transparent: true,
         });
 
@@ -76,6 +76,7 @@ export class MedusaBellMargin {
         //MedusaBellMargin.material.normalNode = vNormal.normalize();
 
         MedusaBellMargin.material.colorNode = Medusa.colorNode;
+        MedusaBellMargin.material.emissiveNode = Medusa.emissiveNode;
     }
     createGeometry() {
         const { bell, subdivisions, physics, bridge, medusaId } = this.medusa;

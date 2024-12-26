@@ -31,7 +31,9 @@ export class MedusaBellBottom {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaBellBottom.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.DoubleSide,
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            opacity:0.8,
+            transparent: true,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
@@ -47,6 +49,9 @@ export class MedusaBellBottom {
         })();
         MedusaBellBottom.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         //MedusaBellBottom.material.normalNode = vNormal.normalize();
+
+        MedusaBellBottom.material.colorNode = Medusa.colorNode;
+        MedusaBellBottom.material.emissiveNode = Medusa.emissiveNode;
     }
 
     createGeometry() {
@@ -85,8 +90,8 @@ export class MedusaBellBottom {
             const noisePosY = Math.cos(azimuth) * 3;
             //zenith *= 0.90 + noise3D(noiseSeed, noisePosX, noisePosY) * 0.05;
 
-            const uvx = Math.sin(azimuth) * zenith * 4;
-            const uvy = Math.cos(azimuth) * zenith * 4;
+            const uvx = Math.sin(azimuth) * zenith * 1;
+            const uvy = Math.cos(azimuth) * zenith * 1;
 
             const ptr = vertexCount;
             positionArray[ptr * 3 + 0] = position.x;

@@ -80,9 +80,9 @@ class TestApp {
         this.lights = new Lights();
         this.scene.add(this.lights.object);
 
-        const hdriTexture = await loadHdr(hdriFile);
+        //const hdriTexture = await loadHdr(hdriFile);
         this.background = new Background(this.renderer);
-        this.scene.environment = this.background.texture;
+        this.scene.environmentNode = Background.envFunction;
         this.scene.environmentIntensity = 1.0;
         //this.scene.background = this.background.texture;
         //this.scene.backgroundBlurriness = 1.0;
@@ -136,6 +136,9 @@ class TestApp {
         //this.testGeometry = new TestGeometry();
         //this.scene.add(this.testGeometry.object);
 
+        this.raycaster = new THREE.Raycaster();
+        this.renderer.domElement.addEventListener("pointermove", (event) => { this.onMouseMove(event); });
+
 
         this.stats = new Stats();
         this.stats.showPanel(0); // Panel 0 = fps
@@ -143,10 +146,20 @@ class TestApp {
         this.renderer.domElement.parentElement.appendChild(this.stats.domElement);
         await progressCallback(1.0, 100);
     }
+
+    onMouseMove(event) {
+        const pointer = new THREE.Vector2();
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        this.raycaster.setFromCamera(pointer, this.camera);
+        Medusa.setMouseRay(this.raycaster.ray.direction);
+    }
+
     resize(width, height) {
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
     }
+
     async update(delta, elapsed) {
         const { runSimulation, showVerletSprings } = conf;
         this.springVisualizer.object.visible = showVerletSprings;

@@ -2,7 +2,7 @@ import * as THREE from "three/webgpu";
 import {noise3D} from "./common/noise";
 import chroma from "chroma-js";
 import {conf} from "./conf";
-import {Fn, vec3, screenUV, positionWorld, cameraPosition, float, acos, normalWorld, rand, time, sin} from "three/tsl";
+import {Fn, vec3, screenUV, positionWorld, cameraPosition, float, acos, normalWorld, rand, time, sin, dot, mx_worley_noise_float, reflectVector} from "three/tsl";
 
 export class Background {
 
@@ -20,6 +20,13 @@ export class Background {
         color.y.addAssign(rand(uv.yx).sub(0.5).mul(1.0/255));
         color.z.addAssign(rand(uv.mul(1.234)).sub(0.5).mul(1.0/255));
         return color;
+    })();
+
+    static envFunction = Fn(() => {
+        const water = mx_worley_noise_float(vec3(positionWorld.xz.mul(1.0), time.mul(1.0)));
+        const up = dot(vec3(0,1,0),reflectVector).max(0.0);
+        const lightIntensity = up.mul(water.mul(0.7).add(0.0));
+        return vec3(1).mul(lightIntensity);
     })();
 
     static fogNear = 12;
