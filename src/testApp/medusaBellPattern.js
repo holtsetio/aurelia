@@ -18,8 +18,12 @@ export class MedusaBellPattern {
 
             /*** lines ***/
             const a = attribute('azimuth').div(Math.PI).mul(4).mod(0.5).sub(0.25).toVar();
-            const noise = triNoise3D(vec3(uv().mul(0.6), 12.34), 0, 0).mul(4.0).sub(2.0); //mx_perlin_noise_float(vUv.mul(6));
-            a.addAssign(noise.mul(0.1));
+            const noise = triNoise3D(vec3(uv().mul(0.6), 1.34), 0.1, time).mul(3.0).sub(1.0).toVar(); //mx_perlin_noise_float(vUv.mul(6));
+
+            //a.assign(a.abs());
+            const lineNoise = noise.mul(0.1).mul(smoothstep(0.23, 0.25, a.abs()).oneMinus());
+            a.addAssign(lineNoise);
+
 
 
             const fade0 = smoothstep(0.2, 0.25, d);

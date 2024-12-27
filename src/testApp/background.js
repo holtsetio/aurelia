@@ -17,8 +17,15 @@ import {
     dot,
     mx_worley_noise_float,
     reflectVector,
-    triNoise3D, min, smoothstep
+    triNoise3D, min, smoothstep, vec2, mod
 } from "three/tsl";
+
+const hash23 = /*@__PURE__*/ Fn( ( [ uv ] ) => {
+    const a = 12.9898, b = 78.233, c = vec3(43758.5453, 43758.1947, 43758.42037);
+    const dt = dot(uv.xy, vec2(a, b));
+    const sinsn = sin(mod( dt, Math.PI )).toVar();
+    return c.mul(sinsn).fract();
+} );
 
 export class Background {
 
@@ -32,9 +39,8 @@ export class Background {
         const y = camDir.y.mul(0.5).add(0.5).pow(2.0).add(wave);
         const color = colorTop.mul(y);
         const uv = screenUV.toVar();
-        color.x.addAssign(rand(uv).sub(0.5).mul(1.0/255));
-        color.y.addAssign(rand(uv.yx).sub(0.5).mul(1.0/255));
-        color.z.addAssign(rand(uv.mul(1.234)).sub(0.5).mul(1.0/255));
+        const dither = hash23(uv).sub(0.5).mul(1.0/255);
+        color.xyz.addAssign(dither);
         return color;
     })();
 

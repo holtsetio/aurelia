@@ -106,10 +106,6 @@ export class MedusaBellGeometry {
         MedusaBell.material.thicknessScaleNode = float( 1.0 );*/
     }
 
-    normalizeAzimuth (a) {
-        return a < 0 ? a + Math.PI * 2 : a;
-    }
-
     _addVertex (zenith, azimuth, v0, v1, v2, v3, side, width, bottomFactor) {
         const ptr = this.vertexCount;
         const uvx = Math.sin(azimuth) * zenith * 1;
@@ -137,13 +133,22 @@ export class MedusaBellGeometry {
         return ptr;
     }
 
+    getAvgAngle (angles) {
+        let x = 0, y = 0;
+        angles.forEach(a => {
+            x += Math.sin(a);
+            y += Math.cos(a);
+        });
+        return Math.atan2(x,y);
+    }
+
     addVertexFromParams(zenith, azimuth, side = {x: 0, y: 0, z: 1}, width = 0, bottomFactor = 0) {
         return this._addVertex(zenith, azimuth, -1, -1, -1, -1, side, width, bottomFactor);
     }
 
     addVertexFromVertices(v0, v1, v2, v3, side, width, bottomFactor = 0) {
         let zenith, azimuth;
-        azimuth = (this.normalizeAzimuth(v0.azimuth) + this.normalizeAzimuth(v1.azimuth) + this.normalizeAzimuth(v2.azimuth) + this.normalizeAzimuth(v3.azimuth)) * 0.25;
+        azimuth = this.getAvgAngle([v0.azimuth,v1.azimuth,v2.azimuth,v3.azimuth]);
         zenith = (v0.zenith + v1.zenith + v2.zenith + v3.zenith) * 0.25;
         zenith -= (v0.offset.y + v1.offset.y + v2.offset.y + v3.offset.y) * 0.25;
         zenith += side.y * width;
