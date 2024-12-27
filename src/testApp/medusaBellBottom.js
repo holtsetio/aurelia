@@ -38,7 +38,7 @@ export class MedusaBellBottom {
         };
 
         const vertexRows = [];
-        vertexRows.push([addVertex(icoVertexTop.clone().normalize())]);
+        vertexRows.push([]); // addVertex(icoVertexTop.clone().normalize())
         for (let y=1; y<=subdivisions; y++) {
             const vertexRow = [];
             for (let f=0; f<5; f++) {
@@ -82,8 +82,14 @@ export class MedusaBellBottom {
             return vertexRows[subdivisions + row][face * subdivisions + (subdivisions - row) + index].ptr;
         }
 
+        {
+            const [v0,v1,v2,v3,v4] = vertexRows[1];
+            geometryInside.addFace(v0.ptr, v2.ptr, v1.ptr);
+            geometryInside.addFace(v0.ptr, v3.ptr, v2.ptr);
+            geometryInside.addFace(v0.ptr, v4.ptr, v3.ptr);
+        }
 
-        for (let y = 1; y<=subdivisions; y++) {
+        for (let y = 2; y<=subdivisions; y++) {
             for (let f=0; f<5; f++) {
                 for (let x=0; x < y; x++) {
                     const v0 = getVertexFromTopFace(f, y, x);

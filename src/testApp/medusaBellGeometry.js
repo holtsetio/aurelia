@@ -59,8 +59,8 @@ export class MedusaBellGeometry {
             If(vertexIds.x.equal(int(-1)), () => {
                 position.assign(getBellPosition(Medusa.uniforms.phase, zenith, azimuth, bottomFactor));
                 position.assign(Medusa.uniforms.matrix.mul(position).xyz);
-                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.01), bottomFactor)).xyz;
-                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.add(0.01), bottomFactor)).xyz;
+                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.001), bottomFactor)).xyz;
+                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.add(0.001), bottomFactor)).xyz;
                 tangent.assign(p0.sub(position));
                 bitangent.assign(p1.sub(position));
             }).Else(() => {
