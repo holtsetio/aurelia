@@ -25,7 +25,7 @@ export class MedusaBellTop {
             icoVertexRowBottom.push(new THREE.Vector3(Math.sin(bottomAngle) * icoRadius, -h, Math.cos(bottomAngle) * icoRadius));
         }
 
-        const addVertex = (position) => {
+        const addVertex = (position)=> {
             const width = Math.sqrt(position.x*position.x+position.z*position.z);
             let zenith = Math.atan2(width, position.y) / (Math.PI * 0.5);
             const azimuth = Math.atan2(position.x, position.z);
