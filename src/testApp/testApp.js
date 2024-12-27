@@ -182,7 +182,6 @@ class TestApp {
         if (this.frameNum === 0) {
             console.timeEnd("firstFrame");
         }
-        //console.log(this.renderer.info);
         this.frameNum++
     }
 }

@@ -4,7 +4,7 @@ import {
     attribute,
     varying,
     vec3,
-    smoothstep, uv, float, min, mix, cameraPosition, positionWorld
+    smoothstep, uv, float, min, mix, cameraPosition, positionWorld, triNoise3D, time
 } from "three/tsl";
 import {mx_perlin_noise_float} from "three/src/nodes/materialx/lib/mx_noise";
 import {Medusa} from "./medusa";
@@ -18,7 +18,7 @@ export class MedusaBellPattern {
 
             /*** lines ***/
             const a = attribute('azimuth').div(Math.PI).mul(4).mod(0.5).sub(0.25).toVar();
-            const noise = mx_perlin_noise_float(vUv.mul(6));
+            const noise = triNoise3D(vec3(uv().mul(0.6), 12.34), 0, 0).mul(4.0).sub(2.0); //mx_perlin_noise_float(vUv.mul(6));
             a.addAssign(noise.mul(0.1));
 
 
@@ -47,8 +47,8 @@ export class MedusaBellPattern {
             result.assign(min(result,circlesFade));
 
             /*** speckles ***/
-            const specklesNoiseRaw = mx_perlin_noise_float(uv().mul(100));
-            const specklesNoise = smoothstep(-0.5, 0.0, specklesNoiseRaw);
+            const specklesNoiseRaw = triNoise3D(vec3(uv().mul(10), 12.34), 0, 0);
+            const specklesNoise = smoothstep(0.1, 0.3, specklesNoiseRaw);
             const specklesFade = smoothstep(0.7, 0.9, d);
             const specklesFade2 = smoothstep(0, 0.2, d).oneMinus();
             const speckles = specklesNoise.max(specklesFade).max(specklesFade2);
@@ -74,7 +74,7 @@ export class MedusaBellPattern {
             const color = vec3().toVar("DiffuseColor");
             const projectedMousePos = cameraPosition.add(Medusa.uniforms.mouseRay.mul(cameraPosition.distance(positionWorld)));
             const delta = positionWorld.sub(projectedMousePos).toVar();
-            const noise = mx_perlin_noise_float(positionWorld).mul(0.5).add(0.5);
+            const noise = triNoise3D(positionWorld.xyz.mul(0.1), 0.2, time).mul(3); //mx_perlin_noise_float(positionWorld).mul(0.5).add(0.5);
             const factor = delta.length().oneMinus().mul(noise).max(0.0).pow(2.0);
 
             return color.mul(factor);

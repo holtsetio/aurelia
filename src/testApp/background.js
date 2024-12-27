@@ -2,7 +2,23 @@ import * as THREE from "three/webgpu";
 import {noise3D} from "./common/noise";
 import chroma from "chroma-js";
 import {conf} from "./conf";
-import {Fn, vec3, screenUV, positionWorld, cameraPosition, float, acos, normalWorld, rand, time, sin, dot, mx_worley_noise_float, reflectVector} from "three/tsl";
+import {
+    Fn,
+    vec3,
+    screenUV,
+    positionWorld,
+    cameraPosition,
+    float,
+    acos,
+    normalWorld,
+    rand,
+    time,
+    sin,
+    dot,
+    mx_worley_noise_float,
+    reflectVector,
+    triNoise3D, min, smoothstep
+} from "three/tsl";
 
 export class Background {
 
@@ -23,11 +39,13 @@ export class Background {
     })();
 
     static envFunction = Fn(() => {
-        const water = mx_worley_noise_float(vec3(positionWorld.xz.mul(1.0), time.mul(1.0)));
+        //const water = mx_worley_noise_float(vec3(positionWorld.xz.mul(1.0), time.mul(1.0)));
+        const waterNoise = triNoise3D(vec3(positionWorld.xz.mul(0.2), 13.37), 0.5, time); // mx_worley_noise_float(vec3(positionWorld.xz.mul(1.0), time.mul(1.0)));
+        const water = min(smoothstep(0.2,0.25,waterNoise), smoothstep(0.25,0.30,waterNoise).oneMinus());
         const up = dot(vec3(0,1,0),reflectVector).max(0.0);
-        const lightIntensity = up.mul(water.mul(0.7).add(0.0));
+        const lightIntensity = up.mul(water.mul(0.1).add(0.0));
         return vec3(1).mul(lightIntensity);
-    })();
+    })().toVar("waterEnvironment");
 
     static fogNear = 12;
     static fogFar = 30;

@@ -31,7 +31,7 @@ export class Medusa {
         this.object = new THREE.Object3D();
         this.transformationObject = new THREE.Object3D();
         this.object.add(this.transformationObject);
-        this.transformationObject.position.set(Math.random() * 10, 0, Math.random() * 10);
+        this.transformationObject.position.set(Math.random() * 20, 0, Math.random() * 20);
 
         this.time = Math.random() * 5;
         this.noiseSeed = Math.random() * 100.0;
