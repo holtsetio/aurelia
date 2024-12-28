@@ -28,7 +28,7 @@ export class MedusaBell {
         this.geometryInside.bakeGeometry();
 
         this.geometryInside.object.renderOrder = 20;
-        this.geometryOutside.object.renderOrder = 21;
+        this.geometryOutside.object.renderOrder = 22;
 
         this.object.add(this.geometryOutside.object);
         this.object.add(this.geometryInside.object);

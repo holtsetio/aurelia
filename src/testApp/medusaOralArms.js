@@ -228,6 +228,6 @@ export class MedusaOralArms {
 
         this.object = new THREE.Mesh(armsGeometry, MedusaOralArms.material);
         this.object.frustumCulled = false;
-        this.object.renderOrder = 30;
+        this.object.renderOrder = 21;
     }
 }
