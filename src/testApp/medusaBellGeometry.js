@@ -10,7 +10,7 @@ import {
     vec2,
     uint,
     int,
-    If, float
+    If, float, uv, uniform, vec4, positionLocal
 } from "three/tsl";
 
 import {Medusa} from "./medusa";
@@ -21,8 +21,11 @@ import {MedusaBellPattern} from "./medusaBellPattern";
 export class MedusaBellGeometry {
     object = null;
 
-    constructor(medusa) {
+    static uniforms = {};
+
+    constructor(medusa, glow = false) {
         this.medusa = medusa;
+        this.glow = glow;
 
         this.positionArray = [];
         this.vertexIdArray = [];
@@ -40,11 +43,16 @@ export class MedusaBellGeometry {
         MedusaBellGeometry.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
             roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
-            opacity:0.9,
+            opacity:0.7,
             transparent: true,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
+        const vMedusaPosLocal = varying(vec3(0), "v_MedusaPosLocal");
+        const vMedusaPosGlobal = varying(vec3(0), "v_MedusaPosGlobal");
+        const vMedusaCenter = varying(vec3(0), "v_MedusaCenter");
+        MedusaBellGeometry.uniforms.glowStrength = uniform(0.0);
+
         MedusaBellGeometry.material.positionNode = Fn(() => {
             const tangent = vec3().toVar();
             const bitangent = vec3().toVar();
@@ -82,6 +90,10 @@ export class MedusaBellGeometry {
             normal.addAssign(tangent.normalize().mul(side.y));
             position.addAssign(normal.mul(side.w));
 
+            vMedusaPosGlobal.assign(position);
+            //vMedusaCenter.assign(Medusa.uniforms.matrix[3].xyz);
+            vMedusaCenter.assign(Medusa.uniforms.matrix.mul(vec4(0,0.3,0,1)).xyz);
+
             vNormal.assign(transformNormalToView(normal));
             return position;
         })();
@@ -93,17 +105,29 @@ export class MedusaBellGeometry {
         MedusaBellGeometry.material.metalnessNode = Fn(() => {
             const metalness = float().toVar("medusaMetalness");
             return metalness.mul(0.5).add(0.25);
+        })()
+        /*MedusaBellGeometry.material.transmissionNode = Fn(() => {
+            const metalness = float().toVar("medusaMetalness");
+            return metalness.oneMinus().mul(0.8).add(0.2);
+        })();*/
+
+
+        MedusaBellGeometry.material.opacityNode = Fn(() => {
+            const metalness = float().toVar("medusaMetalness");
+            return metalness.mul(0.4).add(0.5);
         })();
 
-        /*
-        MedusaBell.material.thicknessColorNode = Fn(() => {
-           return uv().length().div(4.0).oneMinus();
-        })();
-        MedusaBell.material.thicknessDistortionNode = float( 0.1 );
-        MedusaBell.material.thicknessAmbientNode = float( 0.0 );
-        MedusaBell.material.thicknessAttenuationNode = float( .8 );
-        MedusaBell.material.thicknessPowerNode = float( 2.0 );
-        MedusaBell.material.thicknessScaleNode = float( 1.0 );*/
+
+        /*MedusaBellGeometry.material.roughnessNode = Fn(() => {
+            const metalness = float().toVar("medusaMetalness");
+            return metalness.oneMinus().mul(0.5).add(0.25);
+        })();*/
+
+        /*MedusaBellGeometry.material.iridescenceThicknessNode = uniform( 0.1 );
+        MedusaBellGeometry.material.dispersionNode = uniform( 0.1 );
+        const folder = conf.gui.addFolder("sss");
+        folder.add(MedusaBellGeometry.material.iridescenceThicknessNode, 'value', 0, 10, 0.01).name('iridescenceThickness');
+        folder.add(MedusaBellGeometry.material.dispersionNode, 'value', 0, 10, 0.01).name('dispersion');*/
     }
 
     _addVertex (zenith, azimuth, v0, v1, v2, v3, side, width, bottomFactor) {
@@ -181,6 +205,7 @@ export class MedusaBellGeometry {
         this.object.frustumCulled = false;
 
         this.object.onBeforeRender = () => {
+            MedusaBellGeometry.uniforms.glowStrength.value = this.glow ? 1.0 : 0.0;
             Medusa.uniforms.phase.value = this.medusa.phase;
             Medusa.uniforms.matrix.value.copy(this.medusa.transformationObject.matrix);
         }

@@ -26,7 +26,7 @@ import {
     uint,
     int,
     cameraWorldMatrix,
-    cameraFar, positionView, smoothstep, cameraPosition
+    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D
 } from "three/tsl";
 import {mx_perlin_noise_vec3} from "three/src/nodes/materialx/lib/mx_noise";
 import {Background} from "./background";
@@ -73,11 +73,17 @@ export class Plankton {
 
         this.material = new THREE.MeshBasicNodeMaterial({ lights: false, transparent: true, depthWrite: false, fog: false });
         const fog = varying(float(0), 'vFog');
+        const flickering = varying(float(0), 'vFlickering');
         this.material.vertexNode = Fn(() => {
             const id = instanceIndex.mul(3).add(1).toVar();
             const pos = vec3(hash(id), hash(id.add(1)), hash(id.add(2))).mul(this.uniforms.bounds).toVar();
 
-            pos.addAssign(mx_perlin_noise_vec3(vec3(pos.xy, time.mul(0.1))).mul(0.5));
+            const noise = mx_perlin_noise_vec3(vec3(pos.xy, time.mul(0.1))).mul(0.5);
+            pos.addAssign(noise);
+            //const noisex = triNoise3D(pos.xyz, 0.1, time).sub(0.5);
+            //const noisey = triNoise3D(pos.yzx, 0.1, time).sub(0.5);
+            //const noisez = triNoise3D(pos.zxy, 0.1, time).sub(0.5);
+            //pos.addAssign(vec3(noisex, noisey, noisez));
 
             const cameraCenterPos = cameraWorldMatrix.mul(vec4(0.0, 0.0, cameraFar.mul(-0.5), 1.0)).xyz;
             const offset = pos.sub(cameraCenterPos).div(this.uniforms.bounds).round().mul(this.uniforms.bounds).mul(-1);
@@ -87,14 +93,18 @@ export class Plankton {
             fog.assign(smoothstep(Background.fogNear, Background.fogFar, projectedZ).oneMinus());
             fog.mulAssign(smoothstep(1, 3, projectedZ));
 
+            flickering.assign(triNoise3D(vec3(float(instanceIndex), 13.12, 13.37), 0.5, time));
+
             return billboarding({ position: pos, horizontal: true, vertical: true });
         })();
 
         this.material.colorNode = vec3(1,1,1);
-
+        
         this.material.opacityNode = Fn(() => {
             const vUv = uv().mul(2.0).sub(1.0);
-            return vUv.length().oneMinus().max(0.0).pow(3.0).mul(fog).mul(0.05);
+            const opacity = vUv.length().oneMinus().max(0.0).pow(3.0).mul(fog).mul(0.3);
+            opacity.mulAssign(flickering);
+            return opacity;
         })();
 
         const plane = new THREE.PlaneGeometry(0.1,0.1);

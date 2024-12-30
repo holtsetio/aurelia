@@ -13,12 +13,16 @@ export class Lights {
         this.object = new THREE.Object3D();
 
 
-        const light = new THREE.DirectionalLight( 0xffffff, 1.0);
+        const light = new THREE.DirectionalLight( 0xffffff, 2.0);
         light.position.set(100, 300, 0);
         this.object.add(light);
         const bottomLight = new THREE.DirectionalLight( 0xffffff, 0.3);
         bottomLight.position.setY(-300);
         this.object.add(bottomLight);
+
+        this.ambientLight = new THREE.HemisphereLight( 0xffffff, new THREE.Color(.1, .4, .9), 1 );
+        this.object.add(this.ambientLight);
+        conf.gui.add(this.ambientLight, "intensity", 0, 10, 0.01);
         //this.object.add(new THREE.SpotLightHelper(light));
 
 

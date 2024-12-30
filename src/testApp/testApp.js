@@ -83,7 +83,8 @@ class TestApp {
         //const hdriTexture = await loadHdr(hdriFile);
         this.background = new Background(this.renderer);
         this.scene.environmentNode = Background.envFunction;
-        this.scene.environmentIntensity = 1.0;
+        this.scene.environmentIntensity = 0.3;
+        conf.gui.add(this.scene, "environmentIntensity", 0, 1, 0.01);
         //this.scene.background = this.background.texture;
         //this.scene.backgroundBlurriness = 1.0;
         //this.scene.backgroundIntensity = 0.2;

@@ -49,7 +49,7 @@ export class Background {
         const waterNoise = triNoise3D(vec3(positionWorld.xz.mul(0.2), 13.37), 0.5, time); // mx_worley_noise_float(vec3(positionWorld.xz.mul(1.0), time.mul(1.0)));
         const water = min(smoothstep(0.2,0.25,waterNoise), smoothstep(0.25,0.30,waterNoise).oneMinus());
         const up = dot(vec3(0,1,0),reflectVector).max(0.0);
-        const lightIntensity = up.mul(water.mul(0.1).add(0.0));
+        const lightIntensity = up.mul(water.mul(1.0).add(0.0));
         return vec3(1).mul(lightIntensity);
     })().toVar("waterEnvironment");
 

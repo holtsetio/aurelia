@@ -60,6 +60,9 @@ export class Medusa {
         this.object.add(this.tentacles.object);
         this.object.add(this.arms.object);
 
+        //this.ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5,5), new THREE.MeshPhysicalNodeMaterial({ color: new THREE.Color(1,0.5,0), emissive: new THREE.Color(1,0.5,0).multiplyScalar(0.5) }));
+        //this.transformationObject.add(this.ball);
+
     }
 
     async bake() {

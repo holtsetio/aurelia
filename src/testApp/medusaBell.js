@@ -13,8 +13,8 @@ export class MedusaBell {
         this.top = new MedusaBellTop(medusa);
         this.bottom = new MedusaBellBottom(medusa);
         this.margin = new MedusaBellMargin(medusa);
-        this.geometryOutside = new MedusaBellGeometry(medusa);
-        this.geometryInside = new MedusaBellGeometry(medusa);
+        this.geometryOutside = new MedusaBellGeometry(medusa, true);
+        this.geometryInside = new MedusaBellGeometry(medusa, false);
     }
 
     createGeometry() {
