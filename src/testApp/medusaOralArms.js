@@ -10,7 +10,7 @@ import {
     vec2,
     If,
     uniform,
-    cos, sin, uv, smoothstep
+    cos, sin, uv, smoothstep, float, positionLocal, mix, triNoise3D, time
 } from "three/tsl";
 
 import {noise2D, noise3D} from "../testApp/common/noise";
@@ -31,7 +31,7 @@ export class MedusaOralArms {
         MedusaOralArms.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.DoubleSide,
             roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
-            opacity: 0.99,
+            opacity: 0.1,
             transparent: true,
         });
 
@@ -65,12 +65,34 @@ export class MedusaOralArms {
             vNormal.assign(transformNormalToView(normal));
             return position;
         })();
-        MedusaOralArms.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
+        //MedusaOralArms.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         MedusaOralArms.material.opacityNode = Fn(() => {
-            return smoothstep(0.05, 0.20, uv().y);
+            return smoothstep(0.05, 0.20, uv().y).mul(0.5);
         })();
 
-        MedusaOralArms.material.emissiveNode = Medusa.emissiveNode;
+        const emissive = float().toVar("medusaOralArmsEmission");
+        MedusaOralArms.material.colorNode = Fn(() => {
+            const noise = triNoise3D(vec3(uv().mul(2.0), 1.34), 0.0, time).toVar(); //mx_perlin_noise_float(vUv.mul(6));
+            const white = vec3(1.0,1.0,1.0).sub(noise);
+            const orange = vec3(1,0.5,0.1).sub(noise);
+            const red = vec3(1,0.2,0.1).sub(noise);
+
+            const a = uv().x.add(noise.mul(0.3));
+            const limit = sin(uv().y.mul(100)).mul(0.03).add(0.3);
+            const value = smoothstep(0,limit,a);
+            emissive.assign(value.oneMinus());
+            const color = vec3().toVar("fragmentColor");
+            color.assign(mix(orange, white, value));
+
+            return color;
+        })();
+
+        MedusaOralArms.material.emissiveNode = Fn(() => {
+            const red = vec3(1,0.2,0.1);
+            const orange = vec3(1,0.5,0.1);
+            return red.mul(emissive);
+        })();
+
         //MedusaOralArms.material.normalNode = vNormal.normalize();
     }
 

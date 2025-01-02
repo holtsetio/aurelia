@@ -10,7 +10,7 @@ import {
     vec2,
     uint,
     int,
-    If, float, uv, uniform, vec4, positionLocal
+    If, float, uv, uniform, vec4, positionLocal, cameraPosition, cross, smoothstep
 } from "three/tsl";
 
 import {Medusa} from "./medusa";
@@ -48,9 +48,7 @@ export class MedusaBellGeometry {
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
-        const vMedusaPosLocal = varying(vec3(0), "v_MedusaPosLocal");
-        const vMedusaPosGlobal = varying(vec3(0), "v_MedusaPosGlobal");
-        const vMedusaCenter = varying(vec3(0), "v_MedusaCenter");
+        const vEmissive = varying(float(0), "v_MedusaEmissive");
         MedusaBellGeometry.uniforms.glowStrength = uniform(0.0);
 
         MedusaBellGeometry.material.positionNode = Fn(() => {
@@ -90,14 +88,21 @@ export class MedusaBellGeometry {
             normal.addAssign(tangent.normalize().mul(side.y));
             position.addAssign(normal.mul(side.w));
 
-            vMedusaPosGlobal.assign(position);
-            //vMedusaCenter.assign(Medusa.uniforms.matrix[3].xyz);
-            vMedusaCenter.assign(Medusa.uniforms.matrix.mul(vec4(0,0.3,0,1)).xyz);
+            If(MedusaBellGeometry.uniforms.glowStrength.greaterThan(0.0), () => {
+                //emissiveness.addAssign(orange.mul(normalView.z.max(0.0).pow(2)).mul(0.4));
+                const medusaCenter = Medusa.uniforms.matrix.mul(vec4(0,0.3,0,1)).xyz;
+                const rayOrigin = position.xyz;
+                const rayDir = rayOrigin.sub(cameraPosition.xyz).normalize().toVar();
+                const center = medusaCenter.xyz;
+                const distRayToCenter = cross(rayDir, center.sub(rayOrigin)).length();
+                // Vector3.Cross(ray.direction, point - ray.origin).magnitude;
+                vEmissive.assign(smoothstep(0,1.0,distRayToCenter).oneMinus().mul(0.4));
+            });
 
             vNormal.assign(transformNormalToView(normal));
             return position;
         })();
-        MedusaBellGeometry.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
+        //MedusaBellGeometry.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         //MedusaBellGeometry.material.normalNode = vNormal.normalize();
 
         MedusaBellGeometry.material.colorNode = MedusaBellPattern.colorNode;
@@ -114,7 +119,7 @@ export class MedusaBellGeometry {
 
         MedusaBellGeometry.material.opacityNode = Fn(() => {
             const metalness = float().toVar("medusaMetalness");
-            return metalness.mul(0.4).add(0.5);
+            return metalness.mul(0.4).add(0.4).add(vEmissive.mul(0.5));
         })();
 
 

@@ -84,7 +84,7 @@ export class Medusa {
     }
 
     async update(delta, elapsed) {
-        this.time += delta * (1.0 + noise2D(this.noiseSeed, elapsed) * 0.1);
+        this.time += delta * (1.0 + noise2D(this.noiseSeed, elapsed*0.1) * 0.1);
         this.phase = ((this.time * 0.2) % 1.0) * Math.PI * 2;
         this.updatePosition(delta, elapsed);
         //return await this.bridge.update();
@@ -130,7 +130,7 @@ export class Medusa {
     static updateStatic() {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness, clearcoatColor, normalMapScale } = conf;
         const materials = [MedusaBellGeometry.material, MedusaTentacles.material, MedusaOralArms.material];
-        materials.forEach((material) => {
+        /*materials.forEach((material) => {
            material.roughness = roughness;
            material.metalness = metalness;
            material.transmission = transmission;
@@ -140,7 +140,7 @@ export class Medusa {
            material.clearcoat = clearcoat;
            material.clearcoatRoughness = clearcoatRoughness;
            //material.clearcoatColor.setHex(clearcoatColor);
-        });
+        });*/
         Medusa.uniforms.normalMapScale.value.set(normalMapScale, -normalMapScale);
     }
 

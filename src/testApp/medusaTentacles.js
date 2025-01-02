@@ -31,7 +31,9 @@ export class MedusaTentacles {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaTentacles.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            roughness, metalness, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            opacity: 0.2,
+            transparent: true,
         });
 
         const vNormal = varying(vec3(0), "v_normalView");
@@ -160,7 +162,9 @@ export class MedusaTentacles {
         this.object = new THREE.Mesh(tentacleGeometry, MedusaTentacles.material);
         this.object.frustumCulled = false;
 
-        this.highlights.createGeometry();
-        this.object.add(this.highlights.object);
+        this.object.renderOrder = 22;
+
+        //this.highlights.createGeometry();
+        //this.object.add(this.highlights.object);
     }
 }

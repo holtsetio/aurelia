@@ -99,7 +99,7 @@ export class Plankton {
         })();
 
         this.material.colorNode = vec3(1,1,1);
-        
+
         this.material.opacityNode = Fn(() => {
             const vUv = uv().mul(2.0).sub(1.0);
             const opacity = vUv.length().oneMinus().max(0.0).pow(3.0).mul(fog).mul(0.3);
