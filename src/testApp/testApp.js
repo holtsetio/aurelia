@@ -13,7 +13,6 @@ import { VerletPhysics } from "./physics/verletPhysics";
 import { VertexVisualizer } from "./physics/vertexVisualizer";
 import {SpringVisualizer} from "./physics/springVisualizer";
 import {Medusa} from "./medusa";
-import hdriFile from "../assets/qwantani_puresky_2k.hdr";
 import {TestGeometry} from "./testGeometry";
 import {MedusaVerletBridge} from "./medusaVerletBridge";
 import {Background} from "./background";

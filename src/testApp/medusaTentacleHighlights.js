@@ -31,7 +31,7 @@ export class MedusaTentacleHighlights {
             roughness, metalness, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
             emissive: new THREE.Color(0xFFFFFF).multiplyScalar(0.2),
             transparent: true,
-            normalMap: Medusa.normalMap,
+            //normalMap: Medusa.normalMap,
             //side: THREE.Single,
             //roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
         });

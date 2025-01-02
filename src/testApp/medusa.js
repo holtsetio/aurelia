@@ -91,11 +91,11 @@ export class Medusa {
     }
 
 
-    static colorMap;
+    /*static colorMap;
     static normalMap;
-    static aoMap;
+    static aoMap;*/
     static async initStatic(physics) {
-        const textureLoader = new THREE.TextureLoader();
+        /*const textureLoader = new THREE.TextureLoader();
         const loadTexture = (file) => {
             return new Promise(resolve => {
                 textureLoader.load(file, texture => {
@@ -106,7 +106,7 @@ export class Medusa {
             });
         }
         Medusa.normalMap = await loadTexture(normalMapFile);
-        Medusa.colorMap = await loadTexture(colorMapFile);
+        Medusa.colorMap = await loadTexture(colorMapFile);*/
 
         Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
         Medusa.uniforms.phase = uniform(0);
@@ -119,7 +119,7 @@ export class Medusa {
         MedusaOralArms.createMaterial(physics);
         //MedusaGut.createMaterial(physics);
 
-        MedusaTentacleHighlights.createMaterial(physics);
+        //MedusaTentacleHighlights.createMaterial(physics);
 
     }
 

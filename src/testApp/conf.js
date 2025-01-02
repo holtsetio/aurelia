@@ -40,7 +40,7 @@ class Conf {
     metalness = 0.2;
     transmission = 0.7;
     color = 0xffffff; //0xf4aaff;
-    iridescence = 0.5;
+    iridescence = 0.0;
     iridescenceIOR = 1.5;
     clearcoat = 0.0;
     clearcoatRoughness = 0.3;

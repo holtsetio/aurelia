@@ -79,7 +79,7 @@ export class MedusaOralArms {
 
             const a = uv().x.add(noise.mul(0.3));
             const limit = sin(uv().y.mul(100)).mul(0.03).add(0.3);
-            const value = smoothstep(0,limit,a);
+            const value = smoothstep(limit,0.6,a).oneMinus();
             emissive.assign(value.oneMinus());
             const color = vec3().toVar("fragmentColor");
             color.assign(mix(orange, white, value));
@@ -90,7 +90,7 @@ export class MedusaOralArms {
         MedusaOralArms.material.emissiveNode = Fn(() => {
             const red = vec3(1,0.2,0.1);
             const orange = vec3(1,0.5,0.1);
-            return red.mul(emissive);
+            return red.mul(emissive.mul(0.5));
         })();
 
         //MedusaOralArms.material.normalNode = vNormal.normalize();
