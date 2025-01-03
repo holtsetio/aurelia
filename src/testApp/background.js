@@ -19,6 +19,7 @@ import {
     reflectVector,
     triNoise3D, min, smoothstep, vec2, mod, mat3, If
 } from "three/tsl";
+import {Vector3} from "three";
 
 const hash23 = /*@__PURE__*/ Fn( ( [ uv ] ) => {
     const a = 12.9898, b = 78.233, c = vec3(43758.5453, 43758.1947, 43758.42037);
@@ -28,7 +29,6 @@ const hash23 = /*@__PURE__*/ Fn( ( [ uv ] ) => {
 } );
 
 export class Background {
-
     static fogFunction = Fn(() => {
         const colorTop = vec3(.1, .4, .9);
         const colorBottom = vec3(.1, .5, .6);

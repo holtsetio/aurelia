@@ -19,6 +19,7 @@ import {Background} from "./background";
 import {acos, float, Fn, normalWorld, vec3, rand, uv, cameraPosition, positionWorld, rangeFog} from "three/tsl";
 import {Plankton} from "./plankton";
 import {Bubbles} from "./bubbles";
+import {Godrays} from "./godrays";
 
 const loadHdr = (file) => {
     return new Promise((resolve, reject) => {
@@ -133,6 +134,11 @@ class TestApp {
 
         this.bubbles = new Bubbles();
         this.scene.add(this.bubbles.object);
+
+        await progressCallback(0.9);
+        this.godrays = new Godrays(this.bridge);
+        this.scene.add(this.godrays.object);
+
         //this.testGeometry = new TestGeometry();
         //this.scene.add(this.testGeometry.object);
 
