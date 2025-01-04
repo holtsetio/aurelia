@@ -89,7 +89,7 @@ class TestApp {
         //this.scene.backgroundBlurriness = 1.0;
         //this.scene.backgroundIntensity = 0.2;
         this.scene.backgroundNode = Background.fogFunction;
-        this.scene.fogNode = rangeFog(Background.fogFunction, Background.fogNear, Background.fogFar);
+        //this.scene.fogNode = rangeFog(Background.fogFunction, Background.fogNear, Background.fogFar);
 
 
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;

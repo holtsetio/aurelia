@@ -14,6 +14,7 @@ import {
 } from "three/tsl";
 
 import {Medusa} from "./medusa";
+import {Background} from "./background";
 import {getBellPosition} from "./medusaBellFormula";
 import {conf} from "./conf";
 import {MedusaBellPattern} from "./medusaBellPattern";
@@ -119,7 +120,8 @@ export class MedusaBellGeometry {
 
         MedusaBellGeometry.material.opacityNode = Fn(() => {
             const metalness = float().toVar("medusaMetalness");
-            return metalness.mul(0.4).add(0.4).add(vEmissive.mul(0.5));
+            const fog = Background.getFog;
+            return metalness.mul(0.4).add(0.4).add(vEmissive.mul(0.5)).mul(fog);
         })();
 
 

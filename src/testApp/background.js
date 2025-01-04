@@ -15,9 +15,10 @@ import {
     time,
     sin,
     dot,
+    positionView,
     mx_worley_noise_float,
     reflectVector,
-    triNoise3D, min, smoothstep, vec2, mod, mat3, If
+    triNoise3D, min, smoothstep, vec2, mod, mat3, If, cameraViewMatrix, vec4
 } from "three/tsl";
 import {Vector3} from "three";
 
@@ -43,6 +44,13 @@ export class Background {
         color.xyz.addAssign(dither);
         return color;
     })();
+
+    static getFog = (Fn(() => {
+        const projectedZ = positionView.z.mul(-1);
+        const fog = smoothstep(Background.fogNear, Background.fogFar, projectedZ).oneMinus();
+        return fog;
+        //fog.mulAssign(smoothstep(1, 3, projectedZ));
+    }).once())().varying('vFog');
 
     //#define F a=min(a,length(.5-fract(k.xyw*=mat3(-2,-1,2, 3,-2,1, 1,2,2)*.3)))
     //

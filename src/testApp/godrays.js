@@ -72,7 +72,8 @@ export class Godrays {
             const phase = this.bridge.medusaPhaseData.element(medusaId);
 
             const bellPosition = getBellPosition(phase, zenith, azimuth, 0).toVar();
-            //bellPosition.xz.mulAssign(1.2);
+            bellPosition.xz.mulAssign(1.4);
+            //bellPosition.y.subAssign(0.1);
             const position = medusaTransform.mul(bellPosition).xyz.toVar();
             position.addAssign(lightDir.mul(offset).mul(10));
             const normal = medusaTransform.mul(vec4(bellPosition.x, 0, bellPosition.z, 0.0)).xyz;
@@ -91,21 +92,29 @@ export class Godrays {
         /*this.material.colorNode = Fn(() => {
             return vNormal.normalize();
         })();*/
-        this.material.opacityNode = Fn(() => {
+        /*this.material.opacityNode = Fn(() => {
             //return 1;
             const cameraRay = positionView.xyz.normalize().mul(-1);
             const normal = vNormal.normalize();
 
             const normalFactor = dot(cameraRay, normal).sub(0.1).max(0.0).mul(1.0/0.9).toVar();
             normalFactor.mulAssign(normalFactor);
-            const offsetFactor = vOffset.oneMinus();
+            normalFactor.mulAssign(normalFactor);
+            const offsetFactor = vOffset.oneMinus().mul(smoothstep(0.00,0.08,vOffset));
 
 
-            return normalFactor.mul(offsetFactor).mul(fog).mul(0.992); //dot(cameraRay, normal).pow(2).mul(vOffset.oneMinus()).mul(0.95);
+            return normalFactor.mul(offsetFactor).mul(fog).mul(0.4); //dot(cameraRay, normal).pow(2).mul(vOffset.oneMinus()).mul(0.95);
+        })();*/
+        this.material.fragmentNode = Fn(() => {
+            const cameraRay = positionView.xyz.normalize().mul(-1);
+            const normal = vNormal.normalize();
+            const normalFactor = dot(cameraRay, normal).sub(0.1).max(0.0).mul(1.0/0.9).toVar();
+            normalFactor.mulAssign(normalFactor);
+            normalFactor.mulAssign(normalFactor);
+            const offsetFactor = vOffset.oneMinus().mul(smoothstep(0.00,0.08,vOffset));
+            const opacity = normalFactor.mul(offsetFactor).mul(fog).mul(0.4); //dot(cameraRay, normal).pow(2).mul(vOffset.oneMinus()).mul(0.95);
+            return vec4(0,0,0,opacity);
         })();
-        /*this.material.fragmentNode = Fn(() => {
-            return vec4(1);
-        })()*/
     }
 
     buildGeometry() {
@@ -132,8 +141,8 @@ export class Godrays {
         const bottomRow = [];
         for (let x=0; x<circleResolution; x++) {
             const azimuth = (x / circleResolution) * Math.PI * 2;
-            topRow.push(addVertex(0.8, azimuth, 0));
-            bottomRow.push(addVertex(0.8, azimuth, 1));
+            topRow.push(addVertex(1, azimuth, 0));
+            bottomRow.push(addVertex(1, azimuth, 1));
         }
         topRow.push(topRow[0]);
         bottomRow.push(bottomRow[0]);

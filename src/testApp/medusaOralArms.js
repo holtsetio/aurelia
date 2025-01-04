@@ -17,6 +17,7 @@ import {noise2D, noise3D} from "../testApp/common/noise";
 import {getBellPosition} from "./medusaBellFormula";
 import {Medusa} from "./medusa";
 import {conf} from "./conf";
+import {Background} from "./background";
 
 
 export class MedusaOralArms {
@@ -67,7 +68,8 @@ export class MedusaOralArms {
         })();
         //MedusaOralArms.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         MedusaOralArms.material.opacityNode = Fn(() => {
-            return smoothstep(0.05, 0.20, uv().y).mul(0.5);
+            const fog = Background.getFog;
+            return smoothstep(0.05, 0.20, uv().y).mul(0.5).mul(fog);
         })();
 
         const emissive = float().toVar("medusaOralArmsEmission");

@@ -10,13 +10,14 @@ import {
     vec2,
     If,
     uniform,
-    cos, sin
+    cos, sin, float
 } from "three/tsl";
 
 import {noise2D, noise3D} from "../testApp/common/noise";
 import {conf} from "./conf";
 import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
 import {Medusa} from "./medusa";
+import {Background} from "./background";
 
 
 export class MedusaTentacles {
@@ -58,6 +59,10 @@ export class MedusaTentacles {
         //Medusa.tentacleMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
         MedusaTentacles.material.normalNode = vNormal.normalize();
         MedusaTentacles.material.emissiveNode = Medusa.emissiveNode;
+        MedusaTentacles.material.opacityNode = Fn(() => {
+            const fog = Background.getFog;
+            return float(0.2).mul(fog);
+        })();
 
     }
 
