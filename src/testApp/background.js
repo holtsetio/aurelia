@@ -45,13 +45,12 @@ export class Background {
         return color;
     })();
 
-    static getFog = (Fn(() => {
+    static getFog = Fn(() => {
         const projectedZ = positionView.z.mul(-1);
         const fog = smoothstep(Background.fogNear, Background.fogFar, projectedZ).oneMinus();
         //fog.mulAssign(smoothstep(3, 6, projectedZ));
         return fog;
-
-    }).once())().varying('vFog');
+    })().toVar("fog");
 
     static envFunction = Fn(() => {
         const up = normalWorld.y.max(0.0);

@@ -26,7 +26,7 @@ import {
     uint,
     int,
     cameraWorldMatrix,
-    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D, cross, mat4, dot
+    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D, cross, mat4, dot, uniformArray, atan
 } from "three/tsl";
 import {Background} from "./background";
 import {getBellPosition} from "./medusaBellFormula";
@@ -35,6 +35,8 @@ import {Lights} from "./lights";
 
 export class Godrays {
     bridge = null;
+
+    uniforms = {};
 
     constructor(bridge){
         this.bridge = bridge;
@@ -52,9 +54,9 @@ export class Godrays {
         });
 
         const lightDir = uniform(Lights.lightDir);
-        const vNormal = varying(vec3(0), "v_normalView");
         const vOffset = varying(float(0), "v_offset");
-        const fog = varying(float(0), 'vFog');
+        const vAzimuth = varying(float(0), "v_azimuth");
+        this.uniforms.matrixInverse = uniformArray(new Array(this.bridge.medusae.length).fill(0).map(() => { return new THREE.Matrix4(); }));
 
         this.material.positionNode = Fn(() => {
             const params = attribute('params');
@@ -64,56 +66,34 @@ export class Godrays {
 
             const medusaId = instanceIndex;
             const medusaTransform = this.bridge.medusaTransformData.element(medusaId);
+            const medusaTransformInverse = this.uniforms.matrixInverse.element(medusaId);
             const phase = this.bridge.medusaPhaseData.element(medusaId);
 
-            const bellPosition = getBellPosition(phase, zenith, azimuth, 0).toVar();
-            bellPosition.xz.mulAssign(1.4);
+            const up = vec3(0,1,0);
+            const camera = medusaTransformInverse.mul(vec4(cameraPosition,1.0)).xyz.normalize();
+            const ortho =  cross(up, camera).normalize();
+            const angle = atan(ortho.x, ortho.z).add(Math.PI);
+
+            const bellPosition = getBellPosition(phase, zenith, azimuth.mul(1).add(angle), 0).toVar();
+            bellPosition.xz.mulAssign(1.5);
             //bellPosition.y.subAssign(0.1);
             const position = medusaTransform.mul(bellPosition).xyz.toVar();
-            position.addAssign(lightDir.mul(offset).mul(10));
-            const normal = medusaTransform.mul(vec4(bellPosition.x, 0, bellPosition.z, 0.0)).xyz;
-            vNormal.assign(transformNormalToView(normal));
+            position.addAssign(lightDir.mul(offset).mul(100));
+
             vOffset.assign(offset);
-
-            const projectedZ = cameraViewMatrix.mul(vec4(position, 1.0)).z.mul(-1);
-            fog.assign(smoothstep(Background.fogNear, Background.fogFar, projectedZ).oneMinus());
-            fog.mulAssign(smoothstep(1, 3, projectedZ));
-
-            //const down = medusaTransform.mul(vec4(0,-1,0,0)).xyz;
-            //fog.mulAssign(down.dot(lightDir))
-            /*const lookAngle = cameraPosition.sub(position).normalize();
-            const lookDot = dot(lookAngle, lightDir).abs().oneMinus();
-            fog.divAssign(lookDot.max(0.1));*/
+            vAzimuth.assign(azimuth);
 
             return position;
         })();
-        /*this.material.colorNode = Fn(() => {
-            return vNormal.normalize();
-        })();*/
-        /*this.material.opacityNode = Fn(() => {
-            //return 1;
-            const cameraRay = positionView.xyz.normalize().mul(-1);
-            const normal = vNormal.normalize();
 
-            const normalFactor = dot(cameraRay, normal).sub(0.1).max(0.0).mul(1.0/0.9).toVar();
-            normalFactor.mulAssign(normalFactor);
-            normalFactor.mulAssign(normalFactor);
-            const offsetFactor = vOffset.oneMinus().mul(smoothstep(0.00,0.08,vOffset));
-
-
-            return normalFactor.mul(offsetFactor).mul(fog).mul(0.4); //dot(cameraRay, normal).pow(2).mul(vOffset.oneMinus()).mul(0.95);
-        })();*/
         this.material.fragmentNode = Fn(() => {
-            const cameraRay = positionView.xyz.normalize().mul(-1);
-            const normal = vNormal.normalize();
-            const normalFactor = dot(cameraRay, normal).sub(0.1).max(0.0).mul(1.0/0.9).toVar();
-            normalFactor.mulAssign(normalFactor);
-            normalFactor.mulAssign(normalFactor);
+            const normalFactor = sin(vAzimuth).abs().pow(2);
 
-            
+            const fog = smoothstep(Background.fogNear, Background.fogFar, positionView.z.mul(-1)).oneMinus().toVar();
+            fog.mulAssign(smoothstep(1, 3, positionView.z.mul(-1)));
 
-            const offsetFactor = vOffset.oneMinus().mul(smoothstep(0.00,0.08,vOffset));
-            const opacity = normalFactor.mul(offsetFactor).mul(fog).mul(0.4); //dot(cameraRay, normal).pow(2).mul(vOffset.oneMinus()).mul(0.95);
+            const offsetFactor = vOffset.oneMinus().mul(smoothstep(0.00,0.008,vOffset));
+            const opacity = normalFactor.mul(offsetFactor).mul(fog).mul(0.4);
             return vec4(0,0,0,opacity);
         })();
     }
@@ -137,11 +117,11 @@ export class Godrays {
             return ptr;
         }
 
-        const circleResolution = 32;
+        const circleResolution = 2;
         const topRow = [];
         const bottomRow = [];
         for (let x=0; x<circleResolution; x++) {
-            const azimuth = (x / circleResolution) * Math.PI * 2;
+            const azimuth = (x / (circleResolution-1)) * Math.PI * 2 * 0.5;
             topRow.push(addVertex(1, azimuth, 0));
             bottomRow.push(addVertex(1, azimuth, 1));
         }
@@ -167,6 +147,13 @@ export class Godrays {
         this.object = new THREE.Mesh(geometry, this.material);
         this.object.frustumCulled = false;
         this.object.renderOrder = -1;
+
+        this.object.onBeforeRender = () => {
+            this.bridge.medusae.forEach((medusa, index) => {
+                const matrix = medusa.transformationObject.matrix;
+                this.uniforms.matrixInverse.array[index].copy(matrix).invert();
+            });
+        };
     }
 
     async update(delta, elapsed) {
