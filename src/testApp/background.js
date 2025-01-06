@@ -48,20 +48,10 @@ export class Background {
     static getFog = (Fn(() => {
         const projectedZ = positionView.z.mul(-1);
         const fog = smoothstep(Background.fogNear, Background.fogFar, projectedZ).oneMinus();
+        //fog.mulAssign(smoothstep(3, 6, projectedZ));
         return fog;
-        //fog.mulAssign(smoothstep(1, 3, projectedZ));
-    }).once())().varying('vFog');
 
-    //#define F a=min(a,length(.5-fract(k.xyw*=mat3(-2,-1,2, 3,-2,1, 1,2,2)*.3)))
-    //
-    // void mainImage(out vec4 k, vec2 p)
-    // {
-    //     k.w = iDate.w*0.1;
-    //     k.xy = p/iResolution.y*7. + sin(iDate.w*.1);
-    //     float a=1.;
-    //     F;F;F;
-    //     k = pow(a,7.)*25.+vec4(0,.35,.5,1);
-    // }
+    }).once())().varying('vFog');
 
     static envFunction = Fn(() => {
         const up = normalWorld.y.max(0.0);

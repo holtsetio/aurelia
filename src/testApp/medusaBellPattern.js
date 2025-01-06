@@ -16,7 +16,7 @@ import {
     time,
     sin,
     positionLocal,
-    atan2,
+    atan,
     modelWorldMatrixInverse,
     vec4,
     cross,
@@ -34,7 +34,7 @@ export class MedusaBellPattern {
             const d = vUv.length();
 
             /*** lines ***/
-            const azimuth = atan2(vUv.x, vUv.y);
+            const azimuth = atan(vUv.x, vUv.y);
             const a = azimuth.div(Math.PI).mul(4).mod(0.5).sub(0.25).toVar();
             const noise = triNoise3D(vec3(uv().mul(0.6), 1.34), 0.5, time).toVar(); //mx_perlin_noise_float(vUv.mul(6));
             result.z.assign(noise);

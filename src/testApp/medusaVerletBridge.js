@@ -44,15 +44,12 @@ export class MedusaVerletBridge {
         this.medusaIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "medusaId", true);
         this.paramsData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "params", true); // x: zenith, y: azimuth, z: isBottom
         this.offsetData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "offset", true); //xyz: offset, w: directionalOffset
-        this.medusaTransformData = uniformArray(new Array(this.medusaCount * 4).fill(0).map(() => { return new THREE.Vector4(); }));
+        this.medusaTransformData = uniformArray(new Array(this.medusaCount).fill(0).map(() => { return new THREE.Matrix4(); }));
         this.medusaPhaseData = uniformArray(new Array(this.medusaCount).fill(0));
 
         this.medusae.forEach((medusa, index) => {
             const matrix = medusa.transformationObject.matrix;
-            this.medusaTransformData.array[index*4+0].set(matrix.elements[0], matrix.elements[1], matrix.elements[2], matrix.elements[3]);
-            this.medusaTransformData.array[index*4+1].set(matrix.elements[4], matrix.elements[5], matrix.elements[6], matrix.elements[7]);
-            this.medusaTransformData.array[index*4+2].set(matrix.elements[8], matrix.elements[9], matrix.elements[10], matrix.elements[11]);
-            this.medusaTransformData.array[index*4+3].set(matrix.elements[12], matrix.elements[13], matrix.elements[14], matrix.elements[15]);
+            this.medusaTransformData.array[index].copy(matrix);
         });
 
 
@@ -76,12 +73,7 @@ export class MedusaVerletBridge {
         this.updatePositions = Fn(()=>{
             If(instanceIndex.lessThan(this.uniforms.vertexCount), () => {
                 const medusaId = this.medusaIdData.buffer.element(instanceIndex);
-                const medusaPtr = medusaId.mul(4).toVar();
-                const m0 = this.medusaTransformData.element(medusaPtr);
-                const m1 = this.medusaTransformData.element(medusaPtr.add(1));
-                const m2 = this.medusaTransformData.element(medusaPtr.add(2));
-                const m3 = this.medusaTransformData.element(medusaPtr.add(3));
-                const medusaTransform = mat4(m0,m1,m2,m3);
+                const medusaTransform = this.medusaTransformData.element(medusaId);
 
                 const phase = this.medusaPhaseData.element(medusaId);
                 const vertexId = this.vertexIdData.buffer.element(instanceIndex);
@@ -89,7 +81,6 @@ export class MedusaVerletBridge {
                 const zenith = params.x;
                 const azimuth = params.y;
                 const bottomFactor = params.z;
-
 
                 const position = getBellPosition(phase, zenith, azimuth, bottomFactor).toVar();
 
@@ -118,10 +109,7 @@ export class MedusaVerletBridge {
 
         this.medusae.forEach((medusa, index) => {
             const matrix = medusa.transformationObject.matrix;
-            this.medusaTransformData.array[index*4+0].set(matrix.elements[0], matrix.elements[1], matrix.elements[2], matrix.elements[3]);
-            this.medusaTransformData.array[index*4+1].set(matrix.elements[4], matrix.elements[5], matrix.elements[6], matrix.elements[7]);
-            this.medusaTransformData.array[index*4+2].set(matrix.elements[8], matrix.elements[9], matrix.elements[10], matrix.elements[11]);
-            this.medusaTransformData.array[index*4+3].set(matrix.elements[12], matrix.elements[13], matrix.elements[14], matrix.elements[15]);
+            this.medusaTransformData.array[index].copy(matrix);
             this.medusaPhaseData.array[index] = medusa.phase;
         });
        // this.uniforms.matrix.value = this.medusa.transformationObject.matrix;

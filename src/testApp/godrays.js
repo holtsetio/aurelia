@@ -63,12 +63,7 @@ export class Godrays {
             const offset = params.z;
 
             const medusaId = instanceIndex;
-            const medusaPtr = medusaId.mul(4).toVar();
-            const m0 = this.bridge.medusaTransformData.element(medusaPtr);
-            const m1 = this.bridge.medusaTransformData.element(medusaPtr.add(1));
-            const m2 = this.bridge.medusaTransformData.element(medusaPtr.add(2));
-            const m3 = this.bridge.medusaTransformData.element(medusaPtr.add(3));
-            const medusaTransform = mat4(m0,m1,m2,m3);
+            const medusaTransform = this.bridge.medusaTransformData.element(medusaId);
             const phase = this.bridge.medusaPhaseData.element(medusaId);
 
             const bellPosition = getBellPosition(phase, zenith, azimuth, 0).toVar();
@@ -84,8 +79,11 @@ export class Godrays {
             fog.assign(smoothstep(Background.fogNear, Background.fogFar, projectedZ).oneMinus());
             fog.mulAssign(smoothstep(1, 3, projectedZ));
 
-            const down = medusaTransform.mul(vec4(0,-1,0,0)).xyz;
-            fog.mulAssign(down.dot(lightDir))
+            //const down = medusaTransform.mul(vec4(0,-1,0,0)).xyz;
+            //fog.mulAssign(down.dot(lightDir))
+            /*const lookAngle = cameraPosition.sub(position).normalize();
+            const lookDot = dot(lookAngle, lightDir).abs().oneMinus();
+            fog.divAssign(lookDot.max(0.1));*/
 
             return position;
         })();
@@ -111,6 +109,9 @@ export class Godrays {
             const normalFactor = dot(cameraRay, normal).sub(0.1).max(0.0).mul(1.0/0.9).toVar();
             normalFactor.mulAssign(normalFactor);
             normalFactor.mulAssign(normalFactor);
+
+            
+
             const offsetFactor = vOffset.oneMinus().mul(smoothstep(0.00,0.08,vOffset));
             const opacity = normalFactor.mul(offsetFactor).mul(fog).mul(0.4); //dot(cameraRay, normal).pow(2).mul(vOffset.oneMinus()).mul(0.95);
             return vec4(0,0,0,opacity);
