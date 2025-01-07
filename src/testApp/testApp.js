@@ -70,6 +70,9 @@ class TestApp {
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
+        this.controls.minPolarAngle = Math.PI * 0.25;
+        this.controls.maxPolarAngle = Math.PI * 0.75;
+
 
         await progressCallback(0.1);
 

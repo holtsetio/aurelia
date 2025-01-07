@@ -6,7 +6,7 @@ import {Fn,vec3,uv} from "three/tsl";
 import {Vector3} from "three";
 
 export class Lights {
-    static lightDir = new Vector3(100, 300, 0).multiplyScalar(-1).normalize();
+    static lightDir = new Vector3(0, 300, 0).multiplyScalar(-1).normalize();
 
     lights = [];
 
