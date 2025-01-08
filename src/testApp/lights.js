@@ -21,7 +21,7 @@ export class Lights {
         this.object.add(light);
         const bottomLight = new THREE.DirectionalLight( 0xffffff, 0.3);
         bottomLight.position.setY(-300);
-        this.object.add(bottomLight);
+        //this.object.add(bottomLight);
 
         this.ambientLight = new THREE.HemisphereLight( 0xffffff, new THREE.Color(.1, .4, .9), 1 );
         this.object.add(this.ambientLight);

@@ -33,7 +33,7 @@ export class MedusaBellBottom {
             let zenith = Math.atan2(width, position.y) / (Math.PI * 0.5);
             const azimuth = Math.atan2(position.x, position.z);
 
-            const ptr = geometryInside.addVertexFromParams(zenith, azimuth, {x: 0, y: 0, z: -1}, 0, 1);
+            const ptr = geometryInside.addVertexFromParams(zenith, azimuth, {x: 0, y: 0, z: -1}, 0);
             return { ptr, azimuth, zenith };
         };
 

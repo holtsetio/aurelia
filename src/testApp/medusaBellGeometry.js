@@ -24,9 +24,9 @@ export class MedusaBellGeometry {
 
     static uniforms = {};
 
-    constructor(medusa, glow = false) {
+    constructor(medusa, isOuterSide = false) {
         this.medusa = medusa;
-        this.glow = glow;
+        this.isOuterSide = isOuterSide;
 
         this.positionArray = [];
         this.vertexIdArray = [];
@@ -40,9 +40,14 @@ export class MedusaBellGeometry {
     }
 
     static createMaterial(physics) {
+        MedusaBellGeometry.materialOuter = this._createMaterial(physics, true);
+        MedusaBellGeometry.materialInner = this._createMaterial(physics, false);
+    }
+
+    static _createMaterial(physics, isOuterSide) {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
-        MedusaBellGeometry.material = new THREE.MeshPhysicalNodeMaterial({
-            //side: THREE.Single,
+        const material = new THREE.MeshPhysicalNodeMaterial({
+            //side: (isOuterSide ? THREE.DoubleSide : THREE.FrontSide),
             roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
             opacity:0.7,
             transparent: true,
@@ -50,24 +55,23 @@ export class MedusaBellGeometry {
 
         const vNormal = varying(vec3(0), "v_normalView");
         const vEmissive = varying(float(0), "v_MedusaEmissive");
-        MedusaBellGeometry.uniforms.glowStrength = uniform(0.0);
 
-        MedusaBellGeometry.material.positionNode = Fn(() => {
+        material.positionNode = Fn(() => {
             const tangent = vec3().toVar();
             const bitangent = vec3().toVar();
             const position = vec3().toVar();
             const normal = vec3().toVar();
             const zenith = attribute('zenith');
             const azimuth = attribute('azimuth');
-            const bottomFactor = attribute('bottomFactor');
+            //const bottomFactor = attribute('bottomFactor');
             const side = attribute('sideData');
             const vertexIds = attribute('vertexIds');
 
             If(vertexIds.x.equal(int(-1)), () => {
-                position.assign(getBellPosition(Medusa.uniforms.phase, zenith, azimuth, bottomFactor));
+                position.assign(getBellPosition(Medusa.uniforms.phase, zenith, azimuth, isOuterSide ? 0 : 1));
                 position.assign(Medusa.uniforms.matrix.mul(position).xyz);
-                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.001), bottomFactor)).xyz;
-                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.add(0.001), bottomFactor)).xyz;
+                const p0 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.sub(0.001), isOuterSide ? 0 : 1)).xyz;
+                const p1 = Medusa.uniforms.matrix.mul(getBellPosition(Medusa.uniforms.phase, zenith.add(0.001), azimuth.add(0.001), isOuterSide ? 0 : 1)).xyz;
                 tangent.assign(p0.sub(position));
                 bitangent.assign(p1.sub(position));
             }).Else(() => {
@@ -89,16 +93,16 @@ export class MedusaBellGeometry {
             normal.addAssign(tangent.normalize().mul(side.y));
             position.addAssign(normal.mul(side.w));
 
-            If(MedusaBellGeometry.uniforms.glowStrength.greaterThan(0.0), () => {
+            //if (glow) {
                 //emissiveness.addAssign(orange.mul(normalView.z.max(0.0).pow(2)).mul(0.4));
-                const medusaCenter = Medusa.uniforms.matrix.mul(vec4(0,0.3,0,1)).xyz;
+                const medusaCenter = Medusa.uniforms.matrix.mul(vec4(0,isOuterSide ? 0.3 : 0.6,0,1)).xyz;
                 const rayOrigin = position.xyz;
                 const rayDir = rayOrigin.sub(cameraPosition.xyz).normalize().toVar();
                 const center = medusaCenter.xyz;
                 const distRayToCenter = cross(rayDir, center.sub(rayOrigin)).length();
                 // Vector3.Cross(ray.direction, point - ray.origin).magnitude;
-                vEmissive.assign(smoothstep(0,1.0,distRayToCenter).oneMinus().mul(0.4));
-            });
+                vEmissive.assign(smoothstep(0,isOuterSide ? 1.0 : 1.8,distRayToCenter).oneMinus().mul(0.4));
+            //};
 
             vNormal.assign(transformNormalToView(normal));
             return position;
@@ -106,38 +110,27 @@ export class MedusaBellGeometry {
         //MedusaBellGeometry.material.normalNode = normalMap(texture(Medusa.normalMap), Medusa.uniforms.normalMapScale); //transformNormalToView(vNormal);
         //MedusaBellGeometry.material.normalNode = vNormal.normalize();
 
-        MedusaBellGeometry.material.colorNode = MedusaBellPattern.colorNode;
-        MedusaBellGeometry.material.emissiveNode = MedusaBellPattern.emissiveNode;
-        MedusaBellGeometry.material.metalnessNode = Fn(() => {
+        if (!isOuterSide) {
+            material.envNode = Fn(() => { return 0; })();
+        }
+
+        material.colorNode = MedusaBellPattern.colorNode;
+        material.emissiveNode = MedusaBellPattern.emissiveNode;
+        material.metalnessNode = Fn(() => {
             const metalness = float().toVar("medusaMetalness");
             return metalness.mul(0.5).add(0.25);
         })()
-        /*MedusaBellGeometry.material.transmissionNode = Fn(() => {
-            const metalness = float().toVar("medusaMetalness");
-            return metalness.oneMinus().mul(0.8).add(0.2);
-        })();*/
 
-
-        MedusaBellGeometry.material.opacityNode = Fn(() => {
+        material.opacityNode = Fn(() => {
             const metalness = float().toVar("medusaMetalness");
             const fog = Background.getFog;
             return metalness.mul(0.4).add(0.4).add(vEmissive.mul(0.5)).mul(fog);
         })();
 
-
-        /*MedusaBellGeometry.material.roughnessNode = Fn(() => {
-            const metalness = float().toVar("medusaMetalness");
-            return metalness.oneMinus().mul(0.5).add(0.25);
-        })();*/
-
-        /*MedusaBellGeometry.material.iridescenceThicknessNode = uniform( 0.1 );
-        MedusaBellGeometry.material.dispersionNode = uniform( 0.1 );
-        const folder = conf.gui.addFolder("sss");
-        folder.add(MedusaBellGeometry.material.iridescenceThicknessNode, 'value', 0, 10, 0.01).name('iridescenceThickness');
-        folder.add(MedusaBellGeometry.material.dispersionNode, 'value', 0, 10, 0.01).name('dispersion');*/
+        return material;
     }
 
-    _addVertex (zenith, azimuth, v0, v1, v2, v3, side, width, bottomFactor) {
+    _addVertex (zenith, azimuth, v0, v1, v2, v3, side, width) {
         const ptr = this.vertexCount;
         const uvx = Math.sin(azimuth) * zenith * 1;
         const uvy = Math.cos(azimuth) * zenith * 1;
@@ -154,7 +147,7 @@ export class MedusaBellGeometry {
 
         this.zenithArray[ptr] = zenith;
         this.azimuthArray[ptr] = azimuth;
-        this.bottomFactorArray[ptr] = bottomFactor;
+        //this.bottomFactorArray[ptr] = bottomFactor;
         this.sideArray[ptr*4+0] = side.x;
         this.sideArray[ptr*4+1] = side.y;
         this.sideArray[ptr*4+2] = side.z;
@@ -173,17 +166,17 @@ export class MedusaBellGeometry {
         return Math.atan2(x,y);
     }
 
-    addVertexFromParams(zenith, azimuth, side = {x: 0, y: 0, z: 1}, width = 0, bottomFactor = 0) {
-        return this._addVertex(zenith, azimuth, -1, -1, -1, -1, side, width, bottomFactor);
+    addVertexFromParams(zenith, azimuth, side = {x: 0, y: 0, z: 1}, width = 0) {
+        return this._addVertex(zenith, azimuth, -1, -1, -1, -1, side, width);
     }
 
-    addVertexFromVertices(v0, v1, v2, v3, side, width, bottomFactor = 0) {
+    addVertexFromVertices(v0, v1, v2, v3, side, width) {
         let zenith, azimuth;
         azimuth = this.getAvgAngle([v0.azimuth,v1.azimuth,v2.azimuth,v3.azimuth]);
         zenith = (v0.zenith + v1.zenith + v2.zenith + v3.zenith) * 0.25;
         zenith -= (v0.offset.y + v1.offset.y + v2.offset.y + v3.offset.y) * 0.25;
         zenith += side.y * width;
-        return this._addVertex(zenith, azimuth, v0.id, v1.id, v2.id, v3.id, side, width, bottomFactor);
+        return this._addVertex(zenith, azimuth, v0.id, v1.id, v2.id, v3.id, side, width);
     }
 
     addFace(v0,v1,v2) {
@@ -195,7 +188,7 @@ export class MedusaBellGeometry {
         const vertexIdBuffer =  new THREE.BufferAttribute(new Int32Array(this.vertexIdArray), 4, false);
         const zenithBuffer =  new THREE.BufferAttribute(new Float32Array(this.zenithArray), 1, false);
         const azimuthBuffer =  new THREE.BufferAttribute(new Float32Array(this.azimuthArray), 1, false);
-        const bottomFactorBuffer =  new THREE.BufferAttribute(new Float32Array(this.bottomFactorArray), 1, false);
+        //const bottomFactorBuffer =  new THREE.BufferAttribute(new Float32Array(this.bottomFactorArray), 1, false);
         const sideBuffer =  new THREE.BufferAttribute(new Float32Array(this.sideArray), 4, false);
         const uvBuffer =  new THREE.BufferAttribute(new Float32Array(this.uvArray), 2, false);
         const geometry = new THREE.BufferGeometry();
@@ -203,16 +196,15 @@ export class MedusaBellGeometry {
         geometry.setAttribute('vertexIds', vertexIdBuffer);
         geometry.setAttribute('zenith', zenithBuffer);
         geometry.setAttribute('azimuth', azimuthBuffer);
-        geometry.setAttribute('bottomFactor', bottomFactorBuffer);
+        //geometry.setAttribute('bottomFactor', bottomFactorBuffer);
         geometry.setAttribute('sideData', sideBuffer);
         geometry.setAttribute('uv', uvBuffer);
         geometry.setIndex(this.indices);
 
-        this.object = new THREE.Mesh(geometry, MedusaBellGeometry.material);
+        this.object = new THREE.Mesh(geometry, this.isOuterSide ? MedusaBellGeometry.materialOuter : MedusaBellGeometry.materialInner);
         this.object.frustumCulled = false;
 
         this.object.onBeforeRender = () => {
-            MedusaBellGeometry.uniforms.glowStrength.value = this.glow ? 1.0 : 0.0;
             Medusa.uniforms.phase.value = this.medusa.phase;
             Medusa.uniforms.matrix.value.copy(this.medusa.transformationObject.matrix);
         }

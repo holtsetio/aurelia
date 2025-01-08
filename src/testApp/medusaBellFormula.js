@@ -10,7 +10,7 @@ export const getBellPosition = (phase, zenith, azimuth, bottomFactor = 0) => {
     const sinAzimuth = sin(azimuth).toVar();
     const cosAzimuth = cos(azimuth).toVar();
     const zenithNoise = triNoise3D(vec3(sinAzimuth.mul(0.02), cosAzimuth.mul(0.02), 12.69), 0.2, time).mul(6.0); //mx_perlin_noise_float(vec3(sinAzimuth.mul(3), cosAzimuth.mul(3), time));
-    const modifiedZenith = zenith.mul(zenithNoise.mul(0.0).add(0.9)).toVar();
+    const modifiedZenith = zenith.mul(zenithNoise.mul(0.01).add(0.9)).toVar();
 
     //const yoffset = sin(phase.add(2.8)).mul(0.3).mul(0);
 
@@ -35,7 +35,7 @@ export const getBellPosition = (phase, zenith, azimuth, bottomFactor = 0) => {
     const bumpNoise = triNoise3D(vec3(sinAzimuth.mul(modifiedZenith).mul(0.02), cosAzimuth.mul(modifiedZenith).mul(0.02), 42.69), 0.2, time).mul(6.0);
     result.addAssign(bumpNoise.mul(0.02));
 
-    const mixFactor = smoothstep(0.0, 0.95, zenith.oneMinus()).mul(0.4).mul(bottomFactor);
+    const mixFactor = smoothstep(0, 0.95, zenith.oneMinus()).mul(0.1).mul(bottomFactor);
     result.y.assign(mix(result.y, 0.0, mixFactor));
 
     return result;
