@@ -2,20 +2,10 @@ import * as THREE from "three/webgpu";
 import {
     Fn,
     attribute,
-    varying,
-    vec3,
-    transformNormalToView,
-    normalMap,
-    texture,
-    vec2,
-    If,
-    uniform,
-    cos, sin, positionGeometry
+    positionGeometry
 } from "three/tsl";
 
-import {noise2D, noise3D} from "../testApp/common/noise";
 import {conf} from "./conf";
-import {Medusa} from "./medusa";
 
 
 export class MedusaTentacleHighlights {

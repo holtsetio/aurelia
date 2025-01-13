@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+//import * as THREE from 'three/webgpu';
 import dat from "dat.gui/src/dat";
 import chroma from "chroma-js";
 import {noise3D} from "./common/noise";

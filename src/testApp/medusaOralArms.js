@@ -13,9 +13,6 @@ import {
     cos, sin, uv, smoothstep, float, positionLocal, mix, triNoise3D, time
 } from "three/tsl";
 
-import {noise2D, noise3D} from "../testApp/common/noise";
-import {getBellPosition} from "./medusaBellFormula";
-import {Medusa} from "./medusa";
 import {conf} from "./conf";
 import {Background} from "./background";
 

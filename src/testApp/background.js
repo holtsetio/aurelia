@@ -33,7 +33,6 @@ import {
     mx_noise_float,
     mix
 } from "three/tsl";
-import {Vector3} from "three";
 import {mx_perlin_noise_float} from "three/src/nodes/materialx/lib/mx_noise";
 import {Lights} from "./lights";
 

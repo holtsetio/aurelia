@@ -1,7 +1,6 @@
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Stats from "three/examples/jsm/libs/stats.module";
-import {RGBELoader} from "three/examples/jsm/loaders/RGBELoader";
 
 /*import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
@@ -13,24 +12,10 @@ import { VerletPhysics } from "./physics/verletPhysics";
 import { VertexVisualizer } from "./physics/vertexVisualizer";
 import {SpringVisualizer} from "./physics/springVisualizer";
 import {Medusa} from "./medusa";
-import {TestGeometry} from "./testGeometry";
 import {MedusaVerletBridge} from "./medusaVerletBridge";
 import {Background} from "./background";
-import {acos, float, Fn, normalWorld, vec3, rand, uv, cameraPosition, positionWorld, rangeFog} from "three/tsl";
 import {Plankton} from "./plankton";
-import {Bubbles} from "./bubbles";
 import {Godrays} from "./godrays";
-
-const loadHdr = (file) => {
-    return new Promise((resolve, reject) => {
-        new RGBELoader().load( file, (texture) => {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            //texture.minFilter = THREE.LinearMipmapLinearFilter;
-            //texture.generateMipmaps = true;
-            resolve(texture);
-        });
-    })
-};
 
 class TestApp {
     renderer = null;
@@ -105,7 +90,7 @@ class TestApp {
 
         console.time("textures");
         await Medusa.initStatic(this.physics);
-        console.timeEnd("textures");
+        //console.timeEnd("textures");
 
         await progressCallback(0.5);
 
@@ -118,13 +103,13 @@ class TestApp {
             this.physics.addObject(medusa);
         }
         this.physics.addObject(this.bridge);
-        console.timeEnd("Medusae");
+        //console.timeEnd("Medusae");
 
         await progressCallback(0.6);
 
         console.time("Baking");
         await this.physics.bake();
-        console.timeEnd("Baking");
+        //console.timeEnd("Baking");
 
         await progressCallback(0.7);
 

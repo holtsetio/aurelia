@@ -119,7 +119,7 @@ export class MedusaVerletBridge {
             });
         })().compute(this.vertexCount);
         await this.updateAll();
-        console.timeEnd("compileBridge");
+        //console.timeEnd("compileBridge");
 
 /*        const resetForcesKernel = Fn(()=>{
             const id = this.uniforms.vertexStart.add(instanceIndex);

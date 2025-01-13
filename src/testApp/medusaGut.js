@@ -16,8 +16,6 @@ import {
 
 import {Medusa} from "./medusa";
 import {getBellPosition, getGutPosition} from "./medusaBellFormula";
-import {noise3D} from "./common/noise";
-import {mx_perlin_noise_vec3} from "three/src/nodes/materialx/lib/mx_noise";
 
 export class MedusaGut {
     object = null;

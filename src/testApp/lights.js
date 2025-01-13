@@ -3,10 +3,9 @@ import {noise3D} from "./common/noise";
 import chroma from "chroma-js";
 import {conf} from "./conf";
 import {Fn,vec3,uv} from "three/tsl";
-import {Vector3} from "three";
 
 export class Lights {
-    static lightDir = new Vector3(0, 300, 0).multiplyScalar(-1).normalize();
+    static lightDir = new THREE.Vector3(0, 300, 0).multiplyScalar(-1).normalize();
 
     lights = [];
 

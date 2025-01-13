@@ -5,15 +5,9 @@ import {
     varying,
     vec3,
     transformNormalToView,
-    normalMap,
-    texture,
-    vec2,
-    If,
-    uniform,
     cos, sin, float
 } from "three/tsl";
 
-import {noise2D, noise3D} from "../testApp/common/noise";
 import {conf} from "./conf";
 import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
 import {Medusa} from "./medusa";

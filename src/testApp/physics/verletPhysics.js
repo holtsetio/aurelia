@@ -103,7 +103,7 @@ export class VerletPhysics {
         for (let i=0; i<this.objects.length; i++){
             await this.objects[i].bake();
         }
-        console.timeEnd("bake/objects");
+        //console.timeEnd("bake/objects");
 
         const initSpringLengths = Fn(()=>{
             const vertices = this.springVertexData.buffer.element(instanceIndex);
