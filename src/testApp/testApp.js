@@ -61,7 +61,7 @@ class TestApp {
     async init(progressCallback) {
         this.renderer.init();
         this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.01, 30);
-        this.camera.position.set(0, 0, -5);
+        this.camera.position.set(0, 0, 15);
         this.camera.lookAt(0, 0, 0);
         this.camera.updateProjectionMatrix();
 
@@ -72,6 +72,9 @@ class TestApp {
         this.controls.enableDamping = true;
         this.controls.minPolarAngle = Math.PI * 0.25;
         this.controls.maxPolarAngle = Math.PI * 0.75;
+        this.controls.minDistance = 8;
+        this.controls.maxDistance = 25;
+        this.controls.enablePan = false;
 
 
         await progressCallback(0.1);
@@ -87,7 +90,7 @@ class TestApp {
         this.background = new Background(this.renderer);
         this.scene.environmentNode = Background.envFunction;
         this.scene.environmentIntensity = 0.3;
-        conf.gui.add(this.scene, "environmentIntensity", 0, 1, 0.01);
+        //conf.gui.add(this.scene, "environmentIntensity", 0, 1, 0.01);
         //this.scene.background = this.background.texture;
         //this.scene.backgroundBlurriness = 1.0;
         //this.scene.backgroundIntensity = 0.2;
@@ -135,8 +138,8 @@ class TestApp {
         this.plankton = new Plankton();
         this.scene.add(this.plankton.object);
 
-        this.bubbles = new Bubbles();
-        this.scene.add(this.bubbles.object);
+        //this.bubbles = new Bubbles();
+        //this.scene.add(this.bubbles.object);
 
         await progressCallback(0.9);
         this.godrays = new Godrays(this.bridge);

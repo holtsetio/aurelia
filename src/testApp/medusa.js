@@ -3,8 +3,6 @@ import { uniform } from "three/tsl";
 
 import {noise2D, noise3D} from "../testApp/common/noise";
 
-import normalMapFile from '../assets/Alien_Muscle_001_NORM.jpg';
-import colorMapFile from '../assets/Alien_Muscle_001_COLOR.jpg';
 import {MedusaTentacles} from "./medusaTentacles";
 import {MedusaBell} from "./medusaBell";
 import {MedusaGut} from "./medusaGut";
@@ -23,6 +21,7 @@ export class Medusa {
     noiseSeed = 0;
     time = 0;
     phase = 0;
+    needsPositionUpdate = true;
     static uniforms = {};
 
     constructor(renderer, physics, bridge){
@@ -31,7 +30,7 @@ export class Medusa {
         this.object = new THREE.Object3D();
         this.transformationObject = new THREE.Object3D();
         this.object.add(this.transformationObject);
-        this.transformationObject.position.set(Math.random() * 20, 0, Math.random() * 20);
+        this.transformationObject.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 10);
 
         this.time = Math.random() * 5;
         this.noiseSeed = Math.random() * 100.0;
@@ -80,6 +79,11 @@ export class Medusa {
 
         const offset = new THREE.Vector3(0,speed,0).applyEuler(this.transformationObject.rotation);
         this.transformationObject.position.add(offset);
+        if (this.transformationObject.position.y > 20) {
+            this.transformationObject.position.set((Math.random() - 0.5) * 10, -25, (Math.random() - 0.5) * 10);
+            this.needsPositionUpdate = true;
+        }
+
         this.transformationObject.updateMatrix();
     }
 

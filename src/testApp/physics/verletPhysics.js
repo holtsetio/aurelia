@@ -19,6 +19,8 @@ export class VerletPhysics {
 
     time = 0;
 
+    intervals = [];
+
     constructor(renderer){
         this.renderer = renderer;
     }
@@ -56,6 +58,8 @@ export class VerletPhysics {
         console.log(this.springCount + " springs");
         //console.log(this.vertexQueue);
 
+        this.uniforms.dampening = uniform(0.998);
+        this.uniforms.stiffnessFactor = uniform(1);
 
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);
@@ -117,7 +121,7 @@ export class VerletPhysics {
             const v0 = this.positionData.buffer.element(vertices.x).toVec3();
             const v1 = this.positionData.buffer.element(vertices.y).toVec3();
             const params = this.springParamsData.buffer.element(instanceIndex);
-            const stiffness = params.x;
+            const stiffness = params.x.mul(this.uniforms.stiffnessFactor);
             const restLength = params.y;
             const delta = v1.sub(v0).toVar();
             const dist = delta.length().max(0.000001).toVar();
@@ -130,7 +134,7 @@ export class VerletPhysics {
             const ptrStart = influencerPtr.x.toVar();
             const ptrEnd = ptrStart.add(influencerPtr.y).toVar();
             const force = this.forceData.buffer.element(instanceIndex).toVar();
-            force.mulAssign(0.998);
+            force.mulAssign(this.uniforms.dampening);
             Loop({ start: ptrStart, end: ptrEnd,  type: 'uint', condition: '<' }, ({ i })=>{
                 const springPtr = this.influencerData.buffer.element(i);
                 //const springSign = this.influencerSignData.readOnly.element(i);
@@ -150,34 +154,6 @@ export class VerletPhysics {
             });
         })().compute(this.vertexCount);
 
-        /*
-        //this.resultData = new WgpuBufferInstanced(this.vertexCount, 'float', 1, Float32Array);
-        //this.positionBuffer = test.buffer;
-        //this.positionBufferStorage = test.storage;
-        //this.positionBufferStorage = THREE.storage(this.positionBuffer, "vec3", this.vertexCount);
-
-
-        //const resultBuffer = this.resultData.storage;
-        const positionStorage = this.positionData.storage;
-
-        const initPositions = THREE.Fn( () => {
-            //const position = this.positionBufferStorage.element( THREE.instanceIndex );
-            //const randX = THREE.hash( THREE.instanceIndex );
-            //const randY = hash( instanceIndex.add( 2 ) );
-            positionStorage.element(THREE.instanceIndex).x.assign(THREE.instanceIndex.toFloat().mul(0.1));
-            //this.resultBufferStorage.element(0).addAssign(1.0);
-            //resultBuffer.element(0).assign(THREE.instanceIndex);
-            //position.x.addAssign(THREE.instanceIndex);
-            //position.y = 0; // randY.mul( 10 );
-            //position.z = 0;
-
-        })().compute(100);
-        await this.renderer.computeAsync(initPositions);
-        const result = await this.positionData.read(this.renderer);
-        //const result = new Float32Array(await this.renderer.getArrayBufferAsync(this.positionBuffer));
-        console.log(result);
-        //console.log(positionBuffer.toAttribute());
-        */
         this.isBaked = true;
     }
     async update(interval, elapsed) {
@@ -188,6 +164,13 @@ export class VerletPhysics {
         const start = performance.now();
         const steps = 6;
         interval = Math.min(1/60, interval);
+        this.intervals.push(interval);
+        if (this.intervals.length > 10) { this.intervals.shift(); }
+        const avgInterval = this.intervals.reduce((sum,val) => sum + val, 0) / this.intervals.length;
+
+        this.uniforms.dampening.value = Math.pow(0.5, interval / 6);
+        this.uniforms.stiffnessFactor.value = Math.min(1.0, avgInterval * 60);
+
         for(let i = 0; i < steps; i++){
             const dt = interval / steps;
             this.time += dt;

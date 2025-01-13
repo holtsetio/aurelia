@@ -61,12 +61,12 @@ class Conf {
     showVerletSprings = false;
 
     constructor() {
-        const gui = new dat.GUI()
+        /*const gui = new dat.GUI()
         this.gui = gui;
 
         this.gui.add(this, "runSimulation");
-        this.gui.add(this, "showVerletSprings");
-
+        this.gui.add(this, "showVerletSprings");*/
+/*
         const materialFolder = gui.addFolder(`Material`);
         materialFolder.addColor(this, "color");
         materialFolder.add(this, "transmission", 0, 1, 0.01);
@@ -85,7 +85,7 @@ class Conf {
         this.bloomFolder = postProcessingFolder.addFolder(`Bloom`);
         this.bloomFolder.add(this, "bloomStrength", 0, 1, 0.01);
         this.bloomFolder.add(this, "bloomRadius", 0, 1, 0.01);
-        this.bloomFolder.add(this, "bloomThreshold", 0, 1, 0.01);
+        this.bloomFolder.add(this, "bloomThreshold", 0, 1, 0.01);*/
     }
 
     update() {

@@ -25,7 +25,7 @@ export class Lights {
 
         this.ambientLight = new THREE.HemisphereLight( 0xffffff, new THREE.Color(.1, .4, .9), 1 );
         this.object.add(this.ambientLight);
-        conf.gui.add(this.ambientLight, "intensity", 0, 10, 0.01);
+        //conf.gui.add(this.ambientLight, "intensity", 0, 10, 0.01);
         //this.object.add(new THREE.SpotLightHelper(light));
 
 
