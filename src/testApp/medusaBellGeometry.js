@@ -102,6 +102,7 @@ export class MedusaBellGeometry {
                 const distRayToCenter = cross(rayDir, center.sub(rayOrigin)).length();
                 // Vector3.Cross(ray.direction, point - ray.origin).magnitude;
                 vEmissive.assign(smoothstep(0,isOuterSide ? 1.0 : 1.8,distRayToCenter).oneMinus().mul(0.4));
+
             //};
 
             vNormal.assign(transformNormalToView(normal));
@@ -206,6 +207,7 @@ export class MedusaBellGeometry {
 
         this.object.onBeforeRender = () => {
             Medusa.uniforms.phase.value = this.medusa.phase;
+            Medusa.uniforms.charge.value = this.medusa.charge;
             Medusa.uniforms.matrix.value.copy(this.medusa.transformationObject.matrix);
         }
     }

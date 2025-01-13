@@ -149,12 +149,18 @@ class TestApp {
         pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
         pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(pointer, this.camera);
-        Medusa.setMouseRay(this.raycaster.ray.direction);
+        //Medusa.setMouseRay(this.raycaster.ray.direction);
     }
 
     resize(width, height) {
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
+    }
+
+    updatePointer() {
+        this.bridge.medusae.forEach(medusa => {
+            medusa.updatePointerInteraction(this.raycaster.ray);
+        });
     }
 
     async update(delta, elapsed) {
@@ -168,6 +174,9 @@ class TestApp {
 
         this.background.update(elapsed);
         this.lights.update(elapsed);
+
+        this.updatePointer();
+
         if (runSimulation) {
             await this.physics.update(delta, elapsed);
         }

@@ -22,6 +22,7 @@ export class Medusa {
     time = 0;
     phase = 0;
     needsPositionUpdate = true;
+    charge = 0;
     static uniforms = {};
 
     constructor(renderer, physics, bridge){
@@ -75,7 +76,7 @@ export class Medusa {
         const rotZ = noise3D(this.noiseSeed, 11.37, time) * Math.PI * 0.2;
         this.transformationObject.rotation.set(rotX,rotY,rotZ, "XZY");
 
-        const speed = (1.0 + Math.sin(this.phase + 4.4) * 0.35) * delta;
+        const speed = (1.0 + Math.sin(this.phase + 4.4) * 0.35 + this.charge * 0.6) * delta;
 
         const offset = new THREE.Vector3(0,speed,0).applyEuler(this.transformationObject.rotation);
         this.transformationObject.position.add(offset);
@@ -87,8 +88,15 @@ export class Medusa {
         this.transformationObject.updateMatrix();
     }
 
+    updatePointerInteraction(ray) {
+        const dist = ray.distanceToPoint(this.transformationObject.position);
+        this.charge += (1 - Math.min(Math.max(0, dist - 0.5), 1)) * 0.05;
+        this.charge = Math.min(this.charge, 1.00);
+        this.charge *= 0.95;
+    }
+
     async update(delta, elapsed) {
-        this.time += delta * (1.0 + noise2D(this.noiseSeed, elapsed*0.1) * 0.1);
+        this.time += delta * (1.0 + noise2D(this.noiseSeed, elapsed*0.1) * 0.1 + this.charge * 0.5);
         this.phase = ((this.time * 0.2) % 1.0) * Math.PI * 2;
         this.updatePosition(delta, elapsed);
         //return await this.bridge.update();
@@ -114,8 +122,7 @@ export class Medusa {
 
         Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
         Medusa.uniforms.phase = uniform(0);
-        Medusa.uniforms.normalMapScale = uniform(new THREE.Vector2());
-        Medusa.uniforms.mouseRay = uniform(new THREE.Vector3());
+        Medusa.uniforms.charge = uniform(0);
 
         MedusaBellPattern.createColorNode();
         MedusaBellGeometry.createMaterial(physics);
@@ -128,7 +135,7 @@ export class Medusa {
     }
 
     static setMouseRay(ray) {
-        Medusa.uniforms.mouseRay.value.copy(ray);
+        //Medusa.uniforms.mouseRay.value.copy(ray);
     };
 
     static updateStatic() {
@@ -145,7 +152,7 @@ export class Medusa {
            material.clearcoatRoughness = clearcoatRoughness;
            //material.clearcoatColor.setHex(clearcoatColor);
         });*/
-        Medusa.uniforms.normalMapScale.value.set(normalMapScale, -normalMapScale);
+        //Medusa.uniforms.normalMapScale.value.set(normalMapScale, -normalMapScale);
     }
 
 }

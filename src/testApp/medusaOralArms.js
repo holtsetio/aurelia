@@ -15,6 +15,7 @@ import {
 
 import {conf} from "./conf";
 import {Background} from "./background";
+import {Medusa} from "./medusa";
 
 
 export class MedusaOralArms {
@@ -80,6 +81,7 @@ export class MedusaOralArms {
             const limit = sin(uv().y.mul(100)).mul(0.03).add(0.3);
             const value = smoothstep(limit,0.6,a).oneMinus();
             emissive.assign(value.oneMinus());
+            emissive.addAssign(Medusa.uniforms.charge);
             const color = vec3().toVar("fragmentColor");
             color.assign(mix(orange, white, value));
 
@@ -250,5 +252,8 @@ export class MedusaOralArms {
         this.object = new THREE.Mesh(armsGeometry, MedusaOralArms.material);
         this.object.frustumCulled = false;
         this.object.renderOrder = 21;
+        this.object.onBeforeRender = () => {
+            Medusa.uniforms.charge.value = this.medusa.charge;
+        }
     }
 }

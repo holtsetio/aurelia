@@ -52,7 +52,9 @@ export class MedusaTentacles {
         })();
         //Medusa.tentacleMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
         MedusaTentacles.material.normalNode = vNormal.normalize();
-        MedusaTentacles.material.emissiveNode = Medusa.emissiveNode;
+        MedusaTentacles.material.emissiveNode = Fn(() => {
+            return Medusa.uniforms.charge;
+        })();
         MedusaTentacles.material.opacityNode = Fn(() => {
             const fog = Background.getFog;
             return float(0.2).mul(fog);
@@ -162,6 +164,9 @@ export class MedusaTentacles {
         this.object.frustumCulled = false;
 
         this.object.renderOrder = 22;
+        this.object.onBeforeRender = () => {
+            Medusa.uniforms.charge.value = this.medusa.charge;
+        }
 
         //this.highlights.createGeometry();
         //this.object.add(this.highlights.object);
