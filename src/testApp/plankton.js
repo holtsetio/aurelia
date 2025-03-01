@@ -75,10 +75,10 @@ export class Plankton {
         const fog = varying(float(0), 'vFog');
         const flickering = varying(float(0), 'vFlickering');
         this.material.vertexNode = Fn(() => {
-            const id = instanceIndex.mul(3).add(1).toVar();
+            const id = instanceIndex.mul(4).add(1).toVar();
             const pos = vec3(hash(id), hash(id.add(1)), hash(id.add(2))).mul(this.uniforms.bounds).toVar();
 
-            const noise = mx_perlin_noise_vec3(vec3(pos.xy, time.mul(0.1))).mul(0.5);
+            const noise = mx_perlin_noise_vec3(vec3(pos.xy, time.mul(0.1))).mul(1.0);
             pos.addAssign(noise);
             //const noisex = triNoise3D(pos.xyz, 0.1, time).sub(0.5);
             //const noisey = triNoise3D(pos.yzx, 0.1, time).sub(0.5);
@@ -95,6 +95,7 @@ export class Plankton {
 
             flickering.assign(triNoise3D(vec3(float(instanceIndex), 13.12, 13.37), 0.5, time));
 
+            positionLocal.xy.mulAssign(hash(id.add(3)).mul(0.8).add(0.6));
             return billboarding({ position: pos, horizontal: true, vertical: true });
         })();
 
@@ -102,7 +103,7 @@ export class Plankton {
 
         this.material.opacityNode = Fn(() => {
             const vUv = uv().mul(2.0).sub(1.0);
-            const opacity = vUv.length().oneMinus().max(0.0).pow(3.0).mul(fog).mul(0.3);
+            const opacity = vUv.length().oneMinus().max(0.0).pow(3.0).mul(fog).mul(0.2);
             opacity.mulAssign(flickering);
             return opacity;
         })();

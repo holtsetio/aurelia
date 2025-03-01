@@ -76,7 +76,7 @@ export class Medusa {
         const rotZ = noise3D(this.noiseSeed, 11.37, time) * Math.PI * 0.2;
         this.transformationObject.rotation.set(rotX,rotY,rotZ, "XZY");
 
-        const speed = (1.0 + Math.sin(this.phase + 4.4) * 0.35 + this.charge * 0.6) * delta;
+        const speed = (1.0 + Math.sin(this.phase + 4.4) * 0.35 + this.charge * 1.0) * delta;
 
         const offset = new THREE.Vector3(0,speed,0).applyEuler(this.transformationObject.rotation);
         this.transformationObject.position.add(offset);

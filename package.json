@@ -5,19 +5,17 @@
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "start": "parcel src/index.html --open",
-    "build": "parcel build src/index.html --public-url ./"
+    "build": "parcel build src/index.html --public-url ./ --reporter @parcel/reporter-bundle-analyzer"
   },
   "dependencies": {
-    "@monogrid/gainmap-js": "^3.0.6",
-    "chroma-js": "^3.1.1",
-    "dat.gui": "0.x",
     "simplex-noise": "^4.0.3",
     "three": "0.x"
   },
   "devDependencies": {
-    "@parcel/transformer-glsl": "^2.9.3",
-    "@parcel/transformer-sass": "^2.9.3",
-    "parcel": "^2.9.3"
+    "@parcel/reporter-bundle-analyzer": "^2.13.3",
+    "@parcel/transformer-glsl": "^2.13.3",
+    "@parcel/transformer-sass": "^2.13.3",
+    "parcel": "^2.13.3"
   },
   "keywords": [],
   "alias": {

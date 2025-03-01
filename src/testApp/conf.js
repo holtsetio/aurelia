@@ -1,9 +1,9 @@
 //import * as THREE from 'three/webgpu';
-import dat from "dat.gui/src/dat";
-import chroma from "chroma-js";
+//import dat from "dat.gui/src/dat";
+//import chroma from "chroma-js";
 import {noise3D} from "./common/noise";
 
-dat.GUI.prototype.addLog = function (object, property, min, max, step) {
+/*dat.GUI.prototype.addLog = function (object, property, min, max, step) {
     const num_controller = this.add(object, property, min, max, step);
     const minv = Math.log(min);
     const maxv = Math.log(max);
@@ -30,7 +30,7 @@ dat.GUI.prototype.addLog = function (object, property, min, max, step) {
 
     num_controller.updateDisplay();
     return num_controller;
-}
+}*/
 
 class Conf {
     gui = null;

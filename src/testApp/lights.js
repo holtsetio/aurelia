@@ -1,8 +1,6 @@
 import * as THREE from "three/webgpu";
 import {noise3D} from "./common/noise";
-import chroma from "chroma-js";
 import {conf} from "./conf";
-import {Fn,vec3,uv} from "three/tsl";
 
 export class Lights {
     static lightDir = new THREE.Vector3(0, 300, 0).multiplyScalar(-1).normalize();

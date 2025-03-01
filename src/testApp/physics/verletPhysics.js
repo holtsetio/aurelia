@@ -19,7 +19,7 @@ export class VerletPhysics {
 
     time = 0;
 
-    intervals = [];
+    timeSinceLastStep = 0;
 
     constructor(renderer){
         this.renderer = renderer;
@@ -59,7 +59,6 @@ export class VerletPhysics {
         //console.log(this.vertexQueue);
 
         this.uniforms.dampening = uniform(0.998);
-        this.uniforms.stiffnessFactor = uniform(1);
 
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);
@@ -121,7 +120,7 @@ export class VerletPhysics {
             const v0 = this.positionData.buffer.element(vertices.x).toVec3();
             const v1 = this.positionData.buffer.element(vertices.y).toVec3();
             const params = this.springParamsData.buffer.element(instanceIndex);
-            const stiffness = params.x.mul(this.uniforms.stiffnessFactor);
+            const stiffness = params.x;
             const restLength = params.y;
             const delta = v1.sub(v0).toVar();
             const dist = delta.length().max(0.000001).toVar();
@@ -161,21 +160,16 @@ export class VerletPhysics {
             console.error("Verlet system not yet baked!");
         }
 
-        const start = performance.now();
-        const steps = 6;
-        interval = Math.min(1/60, interval);
-        this.intervals.push(interval);
-        if (this.intervals.length > 10) { this.intervals.shift(); }
-        const avgInterval = this.intervals.reduce((sum,val) => sum + val, 0) / this.intervals.length;
+        const stepsPerSecond = 360;
+        const timePerStep = 1 / stepsPerSecond;
+        interval = Math.max(Math.min(interval, 1/60), 0.0001);
+        this.timeSinceLastStep += interval;
 
-        this.uniforms.dampening.value = Math.pow(0.5, interval / 6);
-        this.uniforms.stiffnessFactor.value = Math.min(1.0, avgInterval * 60);
-
-        for(let i = 0; i < steps; i++){
-            const dt = interval / steps;
-            this.time += dt;
+        while (this.timeSinceLastStep >= timePerStep) {
+            this.time += timePerStep;
+            this.timeSinceLastStep -= timePerStep;
             for (let i=0; i<this.objects.length; i++){
-                await this.objects[i].update(dt, this.time);
+                await this.objects[i].update(timePerStep, this.time);
             }
             await this.renderer.computeAsync(this.computeSpringForces);
             await this.renderer.computeAsync(this.computeVertexForces);
