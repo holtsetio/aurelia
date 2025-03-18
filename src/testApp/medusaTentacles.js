@@ -53,7 +53,7 @@ export class MedusaTentacles {
         //Medusa.tentacleMaterial.normalNode = normalMap(texture(Medusa.normalMap), vec2(0.8,-0.8)); //transformNormalToView(vNormal);
         MedusaTentacles.material.normalNode = vNormal.normalize();
         MedusaTentacles.material.emissiveNode = Fn(() => {
-            return Medusa.uniforms.charge;
+            return Medusa.uniforms.charge.mul(0.5);
         })();
         MedusaTentacles.material.opacityNode = Fn(() => {
             const fog = Background.getFog;

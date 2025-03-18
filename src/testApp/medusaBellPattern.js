@@ -119,7 +119,7 @@ export class MedusaBellPattern {
             const color = mix(orange,white,value.x).toVar("fragmentColor");
             color.assign(mix(red, color, value.y));
 
-            emissiveness.addAssign(color.mul(Medusa.uniforms.charge));
+            emissiveness.addAssign(color.mul(Medusa.uniforms.charge.mul(0.5)));
 
             /*** inner glow **/
             emissiveness.addAssign(orange.mul(vEmissive));

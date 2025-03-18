@@ -8,8 +8,10 @@
     "build": "parcel build src/index.html --public-url ./ --reporter @parcel/reporter-bundle-analyzer"
   },
   "dependencies": {
+    "@tweakpane/plugin-essentials": "^0.2.1",
     "simplex-noise": "^4.0.3",
-    "three": "0.x"
+    "three": "0.x",
+    "tweakpane": "^4.0.5"
   },
   "devDependencies": {
     "@parcel/reporter-bundle-analyzer": "^2.13.3",

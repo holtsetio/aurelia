@@ -31,12 +31,13 @@ export class Medusa {
         this.object = new THREE.Object3D();
         this.transformationObject = new THREE.Object3D();
         this.object.add(this.transformationObject);
-        this.transformationObject.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 10);
 
         this.time = Math.random() * 5;
         this.noiseSeed = Math.random() * 100.0;
         this.bridge = bridge;
         this.medusaId = this.bridge.registerMedusa(this);
+
+        this.transformationObject.position.set((Math.random() - 0.5) * 10, (this.medusaId / 10 + Math.random() * 0.1 - 0.5) * 40, (Math.random() - 0.5) * 10);
 
         this.createBellGeometry();
 

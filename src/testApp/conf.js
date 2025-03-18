@@ -1,36 +1,5 @@
-//import * as THREE from 'three/webgpu';
-//import dat from "dat.gui/src/dat";
-//import chroma from "chroma-js";
-import {noise3D} from "./common/noise";
-
-/*dat.GUI.prototype.addLog = function (object, property, min, max, step) {
-    const num_controller = this.add(object, property, min, max, step);
-    const minv = Math.log(min);
-    const maxv = Math.log(max);
-    const scale = (maxv - minv) / (max - min);
-
-    const onChangeFunc = num_controller.onChange;
-    num_controller.onChange = (func) => {
-        onChangeFunc(value => {
-            const ret = Math.exp(minv + scale * (value - min));
-            object[property] = ret;
-            func && func(ret);
-        })
-    }
-    num_controller.onChange();
-
-
-    const updateDisplay = num_controller.updateDisplay;
-    num_controller.updateDisplay = () => {
-        updateDisplay();
-        const invertLog = (Math.log(num_controller.getValue()) - minv) / scale + min;
-        const pct = (invertLog - min) / (max - min);
-        num_controller.__foreground.style.width = pct * 100 + '%';
-    }
-
-    num_controller.updateDisplay();
-    return num_controller;
-}*/
+import {Pane} from 'tweakpane';
+import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 
 class Conf {
     gui = null;
@@ -61,35 +30,36 @@ class Conf {
     showVerletSprings = false;
 
     constructor() {
-        /*const gui = new dat.GUI()
+        const gui = new Pane()
+        gui.registerPlugin(EssentialsPlugin);
+
+        const stats = gui.addFolder({
+            title: "stats",
+            expanded: false,
+        });
+        this.fpsGraph = stats.addBlade({
+            view: 'fpsgraph',
+            label: 'fps',
+            rows: 2,
+        });
+
+        /*const settings = gui.addFolder({
+            title: "settings",
+            expanded: false,
+        });
+        settings.addBinding(this, "wireframe");*/
+
         this.gui = gui;
-
-        this.gui.add(this, "runSimulation");
-        this.gui.add(this, "showVerletSprings");*/
-/*
-        const materialFolder = gui.addFolder(`Material`);
-        materialFolder.addColor(this, "color");
-        materialFolder.add(this, "transmission", 0, 1, 0.01);
-        materialFolder.add(this, "metalness", 0, 1, 0.01);
-        materialFolder.add(this, "roughness", 0, 1, 0.01);
-        materialFolder.add(this, "iridescence", 0, 1, 0.01);
-        materialFolder.add(this, "iridescenceIOR", 1.0, 2.333, 0.01);
-        materialFolder.add(this, "clearcoat", 0, 1, 0.01);
-        materialFolder.add(this, "clearcoatRoughness", 0, 1, 0.01);
-        materialFolder.addColor(this, "clearcoatColor");
-        materialFolder.add(this, "normalMapScale", 0, 1, 0.01);
-
-
-        const postProcessingFolder = gui.addFolder(`Post Processing`);
-        postProcessingFolder.add(this, "bloom").onChange((value) => value ? this.bloomFolder.show() : this.bloomFolder.hide());
-        this.bloomFolder = postProcessingFolder.addFolder(`Bloom`);
-        this.bloomFolder.add(this, "bloomStrength", 0, 1, 0.01);
-        this.bloomFolder.add(this, "bloomRadius", 0, 1, 0.01);
-        this.bloomFolder.add(this, "bloomThreshold", 0, 1, 0.01);*/
     }
 
     update() {
+    }
 
+    begin() {
+        this.fpsGraph.begin();
+    }
+    end() {
+        this.fpsGraph.end();
     }
 
 }

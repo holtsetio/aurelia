@@ -1,6 +1,7 @@
 import * as THREE from "three/webgpu";
-import { Fn, If, Loop, select, uint, instanceIndex, uniform } from "three/tsl";
+import {Fn, If, Loop, select, uint, instanceIndex, uniform, cameraPosition, positionWorld} from "three/tsl";
 import {WgpuBuffer} from "../common/WgpuBuffer";
+import {Medusa} from "../medusa";
 
 export class VerletPhysics {
     renderer = null;
@@ -59,6 +60,8 @@ export class VerletPhysics {
         //console.log(this.vertexQueue);
 
         this.uniforms.dampening = uniform(0.998);
+        this.uniforms.camPos = uniform(new THREE.Vector3());
+        this.uniforms.mouseRay = uniform(new THREE.Vector3());
 
         this.positionData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "position", true);
         this.forceData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "force", true);
@@ -141,8 +144,21 @@ export class VerletPhysics {
                 const factor = select(springPtr.greaterThan(0), 1.0, -1.0);
                 force.addAssign(springForce.mul(factor));
             });
+
+            const position = this.positionData.buffer.element(instanceIndex).toVar();
+            const projectedMousePos = this.uniforms.camPos.add(this.uniforms.mouseRay.mul(this.uniforms.camPos.distance(position.xyz)));
+            const delta = position.xyz.sub(projectedMousePos).toVar();
+            const deltaLength = delta.length();
+            const mouseForce = deltaLength.mul(0.7).oneMinus().max(0.0).mul(delta.div(deltaLength)).mul(0.00002);
+            force.addAssign(mouseForce);
+
             //force.y.addAssign(-0.0002);
             this.forceData.buffer.element(instanceIndex).assign(force);
+
+            If(position.w.greaterThan(0.5), ()=>{
+                //const force = this.forceData.buffer.element(instanceIndex);
+                this.positionData.buffer.element(instanceIndex).addAssign(force);
+            });
         })().compute(this.vertexCount);
 
         this.computeAddForces = Fn(()=>{
@@ -155,6 +171,11 @@ export class VerletPhysics {
 
         this.isBaked = true;
     }
+    setMouseRay(origin, direction) {
+        this.uniforms.camPos.value.copy(origin);
+        this.uniforms.mouseRay.value.copy(direction);
+    }
+
     async update(interval, elapsed) {
         if (!this.isBaked) {
             console.error("Verlet system not yet baked!");
@@ -173,7 +194,7 @@ export class VerletPhysics {
             }
             await this.renderer.computeAsync(this.computeSpringForces);
             await this.renderer.computeAsync(this.computeVertexForces);
-            await this.renderer.computeAsync(this.computeAddForces);
+            //await this.renderer.computeAsync(this.computeAddForces);
         }
 
         /*

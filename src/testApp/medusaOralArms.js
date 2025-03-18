@@ -81,7 +81,7 @@ export class MedusaOralArms {
             const limit = sin(uv().y.mul(100)).mul(0.03).add(0.3);
             const value = smoothstep(limit,0.6,a).oneMinus();
             emissive.assign(value.oneMinus());
-            emissive.addAssign(Medusa.uniforms.charge);
+            emissive.addAssign(Medusa.uniforms.charge.mul(0.5));
             const color = vec3().toVar("fragmentColor");
             color.assign(mix(orange, white, value));
 

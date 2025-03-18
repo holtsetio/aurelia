@@ -1,6 +1,6 @@
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import Stats from "three/examples/jsm/libs/stats.module";
+//import Stats from "three/examples/jsm/libs/stats.module";
 
 /*import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
@@ -134,13 +134,13 @@ class TestApp {
         //this.scene.add(this.testGeometry.object);
 
         this.raycaster = new THREE.Raycaster();
-        this.renderer.domElement.addEventListener("pointermove", (event) => { this.onMouseMove(event); });
+        this.renderer.domElement.addEventListener("mousemove", (event) => { this.onMouseMove(event); });
 
 
-        this.stats = new Stats();
+        /*this.stats = new Stats();
         this.stats.showPanel(0); // Panel 0 = fps
         this.stats.domElement.style.cssText = "position:absolute;top:0px;left:0px;";
-        this.renderer.domElement.parentElement.appendChild(this.stats.domElement);
+        this.renderer.domElement.parentElement.appendChild(this.stats.domElement);*/
         await progressCallback(1.0, 100);
     }
 
@@ -149,7 +149,7 @@ class TestApp {
         pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
         pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(pointer, this.camera);
-        //Medusa.setMouseRay(this.raycaster.ray.direction);
+        this.physics.setMouseRay(this.raycaster.ray.origin, this.raycaster.ray.direction);
     }
 
     resize(width, height) {
@@ -164,12 +164,13 @@ class TestApp {
     }
 
     async update(delta, elapsed) {
+        conf.begin();
         const { runSimulation, showVerletSprings } = conf;
         this.springVisualizer.object.visible = showVerletSprings;
 
         conf.update();
         this.controls.update(delta);
-        this.stats.update();
+        //this.stats.update();
         Medusa.updateStatic();
 
         this.background.update(elapsed);
@@ -189,6 +190,7 @@ class TestApp {
             console.timeEnd("firstFrame");
         }
         this.frameNum++
+        conf.end();
     }
 }
 export default TestApp;
