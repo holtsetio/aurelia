@@ -8,6 +8,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 
 import { Lights } from "./lights";
 import { conf } from "./conf";
+import { Info } from "./info";
 import { VerletPhysics } from "./physics/verletPhysics";
 import { VertexVisualizer } from "./physics/vertexVisualizer";
 import {SpringVisualizer} from "./physics/springVisualizer";
@@ -44,6 +45,8 @@ class TestApp {
     }
 
     async init(progressCallback) {
+        conf.init();
+        this.info = new Info();
         this.renderer.init();
         this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.01, 30);
         this.camera.position.set(0, 0, 15);

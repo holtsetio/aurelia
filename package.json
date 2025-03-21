@@ -11,7 +11,8 @@
     "@tweakpane/plugin-essentials": "^0.2.1",
     "simplex-noise": "^4.0.3",
     "three": "0.x",
-    "tweakpane": "^4.0.5"
+    "tweakpane": "^4.0.5",
+    "tweakpane-plugin-infodump": "^4.0.2"
   },
   "devDependencies": {
     "@parcel/reporter-bundle-analyzer": "^2.13.3",

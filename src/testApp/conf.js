@@ -29,7 +29,9 @@ class Conf {
     runSimulation = true;
     showVerletSprings = false;
 
-    constructor() {
+    constructor() { }
+
+    init() {
         const gui = new Pane()
         gui.registerPlugin(EssentialsPlugin);
 
