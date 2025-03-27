@@ -5,7 +5,7 @@ import {
     varying,
     vec3,
     transformNormalToView,
-    cos, sin, float
+    cos, sin, float, mrt
 } from "three/tsl";
 
 import {conf} from "./conf";
@@ -59,6 +59,9 @@ export class MedusaTentacles {
             const fog = Background.getFog;
             return float(0.2).mul(fog);
         })();
+        MedusaTentacles.material.mrtNode = mrt( {
+            bloomIntensity: Background.getFog
+        } );
 
     }
 

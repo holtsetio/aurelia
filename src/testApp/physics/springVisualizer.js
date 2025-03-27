@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { Fn, select, storage, instanceIndex } from "three/tsl";
+import {Fn, select, storage, instanceIndex, mrt} from "three/tsl";
 
 export class SpringVisualizer {
     physics = null;
@@ -20,6 +20,9 @@ export class SpringVisualizer {
             const ptr = select(this.vertexIndexAttribute.equal(0), vertices.x, vertices.y);
             return this.physics.positionData.buffer.element(ptr).xyz;
         } )();
+        this.material.mrtNode = mrt( {
+            bloomIntensity: 0
+        } );
 
         this.geometry = new THREE.InstancedBufferGeometry();
         this.geometry.setAttribute("position", this.positionBuffer);

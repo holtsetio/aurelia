@@ -5,6 +5,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 /*import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass"
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer"*/
+import { pass, mrt, output, float } from "three/tsl";
+import { bloom } from 'three/examples/jsm/tsl/display/BloomNode.js';
 
 import { Lights } from "./lights";
 import { conf } from "./conf";
@@ -17,6 +19,8 @@ import {MedusaVerletBridge} from "./medusaVerletBridge";
 import {Background} from "./background";
 import {Plankton} from "./plankton";
 import {Godrays} from "./godrays";
+
+
 
 class TestApp {
     renderer = null;
@@ -100,10 +104,12 @@ class TestApp {
         this.bridge = new MedusaVerletBridge(this.physics);
 
         console.time("Medusae");
+        let m = null;
         for (let i=0; i<10; i++) {
             const medusa = new Medusa(this.renderer, this.physics, this.bridge);
             this.scene.add(medusa.object);
             this.physics.addObject(medusa);
+            m = medusa;
         }
         this.physics.addObject(this.bridge);
         //console.timeEnd("Medusae");
@@ -132,6 +138,30 @@ class TestApp {
         await progressCallback(0.9);
         this.godrays = new Godrays(this.bridge);
         this.scene.add(this.godrays.object);
+
+        //const s = new THREE.Scene();
+        //s.add(m.object);
+        const scenePass = pass(this.scene, this.camera);
+        scenePass.setMRT( mrt( {
+            output,
+            bloomIntensity: float( 0 ) // default bloom intensity
+        } ) );
+
+        const outputPass = scenePass.getTextureNode();
+        const bloomIntensityPass = scenePass.getTextureNode( 'bloomIntensity' );
+
+        const bloomPass = bloom( outputPass.mul( bloomIntensityPass ) );
+
+        const postProcessing = new THREE.PostProcessing(this.renderer);
+        postProcessing.outputColorTransform = false;
+        postProcessing.outputNode = outputPass.add( bloomPass.mul(bloomIntensityPass.oneMinus()) ).renderOutput();
+
+        this.postProcessing = postProcessing;
+        this.bloomPass = bloomPass;
+
+        this.bloomPass.threshold.value = 0.001;
+        this.bloomPass.strength.value = 0.4;
+        this.bloomPass.radius.value = 0.8;
 
         //this.testGeometry = new TestGeometry();
         //this.scene.add(this.testGeometry.object);
@@ -166,6 +196,21 @@ class TestApp {
         });
     }
 
+    sortMedusae() {
+        this.bridge.medusae.forEach(medusa => {
+           medusa.distance = this.camera.position.distanceTo(medusa.transformationObject.position);
+        });
+        const sorted = [...this.bridge.medusae].sort((m1,m2) => m1.distance - m2.distance);
+        let z = 10;
+        for (let i = 0; i < sorted.length; i++) {
+            const m = sorted[i];
+            m.bell.geometryInside.object.renderOrder = z++;
+            m.arms.object.renderOrder = z++;
+            m.tentacles.object.renderOrder = z++;
+            m.bell.geometryOutside.object.renderOrder = z++;
+        }
+    }
+
     async update(delta, elapsed) {
         conf.begin();
         const { runSimulation, showVerletSprings } = conf;
@@ -184,10 +229,13 @@ class TestApp {
         if (runSimulation) {
             await this.physics.update(delta, elapsed);
         }
+        this.sortMedusae();
 
         //this.testGeometry.update(elapsed);
 
-        this.renderer.render(this.scene, this.camera);
+        //this.renderer.render(this.scene, this.camera);
+
+        await this.postProcessing.renderAsync();
 
         if (this.frameNum === 0) {
             console.timeEnd("firstFrame");

@@ -10,7 +10,7 @@ import {
     vec2,
     If,
     uniform,
-    cos, sin, uv, smoothstep, float, positionLocal, mix, triNoise3D, time
+    cos, sin, uv, smoothstep, float, positionLocal, mix, triNoise3D, time, mrt
 } from "three/tsl";
 
 import {conf} from "./conf";
@@ -93,6 +93,10 @@ export class MedusaOralArms {
             const orange = vec3(1,0.5,0.1);
             return red.mul(emissive.mul(0.5));
         })();
+
+        MedusaOralArms.material.mrtNode = mrt( {
+            bloomIntensity: Background.getFog
+        } );
 
         //MedusaOralArms.material.normalNode = vNormal.normalize();
     }

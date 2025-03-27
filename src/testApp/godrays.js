@@ -26,7 +26,7 @@ import {
     uint,
     int,
     cameraWorldMatrix,
-    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D, cross, mat4, dot, uniformArray, atan
+    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D, cross, mat4, dot, uniformArray, atan, mrt
 } from "three/tsl";
 import {Background} from "./background";
 import {getBellPosition} from "./medusaBellFormula";
@@ -87,7 +87,7 @@ export class Godrays {
             return position;
         })();
 
-        this.material.fragmentNode = Fn(() => {
+        this.material.opacityNode = Fn(() => {
             const normalFactor = sin(vAzimuth).abs().pow(2);
 
             const fog = smoothstep(Background.fogNear, Background.fogFar, positionView.z.mul(-1)).oneMinus().toVar();
@@ -95,8 +95,12 @@ export class Godrays {
 
             const offsetFactor = vOffset.oneMinus().mul(smoothstep(0.00,0.04,vOffset));
             const opacity = normalFactor.mul(offsetFactor).mul(fog).mul(0.33);
-            return vec4(0,0,0,opacity);
+            return opacity;
         })();
+
+        this.material.mrtNode = mrt( {
+            bloomIntensity: 0
+        } );
     }
 
     buildGeometry() {
@@ -137,9 +141,11 @@ export class Godrays {
             indices.push(v1,v2,v3);
         }
         const positionBuffer =  new THREE.BufferAttribute(new Float32Array(positionArray), 3, false);
+        const normalBuffer =  new THREE.BufferAttribute(new Float32Array(positionArray), 3, false);
         const paramBuffer =  new THREE.BufferAttribute(new Float32Array(paramArray), 3, false);
         const geometry = new THREE.InstancedBufferGeometry();
         geometry.setAttribute('position', positionBuffer);
+        geometry.setAttribute('normal', normalBuffer);
         geometry.setAttribute('params', paramBuffer);
         geometry.setIndex(indices);
 

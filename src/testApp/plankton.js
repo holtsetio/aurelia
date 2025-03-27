@@ -26,7 +26,7 @@ import {
     uint,
     int,
     cameraWorldMatrix,
-    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D
+    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D, mrt
 } from "three/tsl";
 import {mx_perlin_noise_vec3} from "three/src/nodes/materialx/lib/mx_noise";
 import {Background} from "./background";
@@ -107,6 +107,10 @@ export class Plankton {
             opacity.mulAssign(flickering);
             return opacity;
         })();
+
+        this.material.mrtNode = mrt( {
+            bloomIntensity: 0.2
+        } );
 
         const plane = new THREE.PlaneGeometry(0.1,0.1);
         this.geometry = new THREE.InstancedBufferGeometry().copy(plane);

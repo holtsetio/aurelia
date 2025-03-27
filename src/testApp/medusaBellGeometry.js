@@ -9,7 +9,7 @@ import {
     texture,
     vec2,
     uint,
-    int,
+    int, mrt,
     If, float, uv, uniform, vec4, positionLocal, cameraPosition, cross, smoothstep
 } from "three/tsl";
 
@@ -127,6 +127,10 @@ export class MedusaBellGeometry {
             const fog = Background.getFog;
             return metalness.mul(0.4).add(0.4).add(vEmissive.mul(0.5)).mul(fog);
         })();
+
+        material.mrtNode = mrt( {
+            bloomIntensity: Background.getFog
+        } );
 
         return material;
     }

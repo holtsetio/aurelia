@@ -113,13 +113,13 @@ export class MedusaBellPattern {
             //value.addAssign(noise.mul(0.5));
 
             const metalness = float(value.x).oneMinus().toVar("medusaMetalness");
-            const emissiveness = red.mul(value.y.oneMinus()).mul(sin(Medusa.uniforms.phase.add(positionLocal.y)).mul(0.5).add(0.5).pow(10)).toVar("medusaEmissiveness");
-            emissiveness.addAssign(red.mul(value.y.mul(0.1)));
+            const emissiveness = red.mul(value.y.oneMinus()).mul(sin(Medusa.uniforms.phase.add(positionLocal.y)).mul(0.5).add(0.5).pow(10).mul(2)).toVar("medusaEmissiveness");
+            emissiveness.addAssign(red.mul(value.y.mul(0.105)));
 
             const color = mix(orange,white,value.x).toVar("fragmentColor");
             color.assign(mix(red, color, value.y));
 
-            emissiveness.addAssign(color.mul(Medusa.uniforms.charge.mul(0.5)));
+            emissiveness.addAssign(vec3(0,0,1).mul(Medusa.uniforms.charge.mul(0.3)));
 
             /*** inner glow **/
             emissiveness.addAssign(orange.mul(vEmissive));
