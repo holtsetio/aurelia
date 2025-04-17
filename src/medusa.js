@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { uniform } from "three/tsl";
+import {iridescenceIOR, uniform} from "three/tsl";
 
 import {noise2D, noise3D} from "./common/noise";
 
@@ -109,6 +109,11 @@ export class Medusa {
 
     static setMouseRay(ray) { }
 
-    static updateStatic() { }
+    static updateStatic() {
+        const { roughness } = conf;
+        MedusaBellGeometry.materialInner.roughness = roughness;
+        MedusaBellGeometry.materialOuter.roughness = roughness;
+
+    }
 
 }

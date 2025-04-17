@@ -5,16 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --mode=production",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^6.3.1"
+    "vite": "^6.3.1",
+    "vite-plugin-tsl-operator": "^1.2.3",
+    "@babel/parser": "^7.26.9",
+    "@babel/traverse": "^7.26.9",
+    "@babel/generator": "^7.26.9",
+    "@babel/types": "^7.26.9"
   },
   "dependencies": {
-    "three": "^0.175.0",
-	"@tweakpane/plugin-essentials": "^0.2.1",
+    "@tweakpane/plugin-essentials": "^0.2.1",
     "simplex-noise": "^4.0.3",
+    "three": "^0.175.0",
     "tweakpane": "^4.0.5",
     "tweakpane-plugin-infodump": "^4.0.2"
   }

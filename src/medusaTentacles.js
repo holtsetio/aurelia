@@ -24,7 +24,7 @@ export class MedusaTentacles {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaTentacles.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            roughness, metalness, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            roughness, metalness, iridescence, iridescenceIOR,
             color: 0xddddff,
             opacity: 0.2,
             transparent: true,

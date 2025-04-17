@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { Fn, instanceIndex, uniform, If, uniformArray, abs, instancedArray } from "three/tsl";
+import {Fn, instanceIndex, uniform, If, uniformArray, abs, instancedArray, normalize} from "three/tsl";
 import {getBellPosition} from "./medusaBellFormula";
 
 export class MedusaVerletBridge {
@@ -107,11 +107,11 @@ export class MedusaVerletBridge {
                 const position = getBellPosition(phase, zenith, azimuth, bottomFactor).toVar();
 
                 If(abs(directionalOffset).greaterThan(0.0), () => {
-                    const p1 = getBellPosition(phase, zenith.add(0.001), azimuth, bottomFactor);
-                    const dir = p1.sub(position).normalize();
-                    offset.assign(dir.mul(directionalOffset));
+                    const p1 = getBellPosition(phase, zenith + 0.001, azimuth, bottomFactor);
+                    const dir = normalize(p1 - position);
+                    offset.assign(dir * directionalOffset);
                 });
-                const result = medusaTransform.mul(position.add(offset)).xyz;
+                const result = (medusaTransform * (position + offset)).xyz;
                 this.physics.positionData.element(vertexId).xyz.assign(result);
             });
         })().compute(this.vertexCount);

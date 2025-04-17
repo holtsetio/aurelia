@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import {Fn, If, Loop, select, uint, instanceIndex, uniform, instancedArray} from "three/tsl";
+import {Fn, If, Loop, select, uint, instanceIndex, uniform, instancedArray, float, distance, max} from "three/tsl";
 
 export class VerletPhysics {
     renderer = null;
@@ -109,7 +109,7 @@ export class VerletPhysics {
             const params = this.springParamsData.element(instanceIndex);
             const restLengthFactor = params.z;
             const restLength = params.y;
-            restLength.assign(v0.distance(v1).mul(restLengthFactor));
+            restLength.assign(distance(v0, v1) * restLengthFactor);
         })().compute(this.springCount);
         await this.renderer.computeAsync(initSpringLengths);
 
@@ -120,9 +120,9 @@ export class VerletPhysics {
             const params = this.springParamsData.element(instanceIndex);
             const stiffness = params.x;
             const restLength = params.y;
-            const delta = v1.sub(v0).toVar();
+            const delta = (v1 - v0).toVar();
             const dist = delta.length().max(0.000001).toVar();
-            const force = dist.sub(restLength).mul(stiffness).div(dist).mul(delta).mul(0.5);
+            const force = (dist - restLength) * stiffness * delta * 0.5 / dist;
             this.springForceData.element(instanceIndex).assign(force);
         })().compute(this.springCount);
 
@@ -134,17 +134,16 @@ export class VerletPhysics {
             force.mulAssign(this.uniforms.dampening);
             Loop({ start: ptrStart, end: ptrEnd,  type: 'uint', condition: '<' }, ({ i })=>{
                 const springPtr = this.influencerData.element(i);
-                //const springSign = this.influencerSignData.readOnly.element(i);
-                const springForce = this.springForceData.element(springPtr.abs().sub(1));
+                const springForce = this.springForceData.element(uint(springPtr.abs()) - uint(1));
                 const factor = select(springPtr.greaterThan(0), 1.0, -1.0);
-                force.addAssign(springForce.mul(factor));
+                force.addAssign(springForce * factor);
             });
 
             const position = this.positionData.element(instanceIndex).toVar();
-            const projectedMousePos = this.uniforms.camPos.add(this.uniforms.mouseRay.mul(this.uniforms.camPos.distance(position.xyz)));
-            const delta = position.xyz.sub(projectedMousePos).toVar();
+            const projectedMousePos = this.uniforms.camPos + this.uniforms.mouseRay * distance(this.uniforms.camPos, position.xyz);
+            const delta = (position.xyz - projectedMousePos).toVar();
             const deltaLength = delta.length();
-            const mouseForce = deltaLength.mul(0.7).oneMinus().max(0.0).mul(delta.div(deltaLength)).mul(0.00002);
+            const mouseForce = max(0.0, 1.0 - 0.7 * deltaLength) * (delta / deltaLength) * 0.00002;
             force.addAssign(mouseForce);
 
             this.forceData.element(instanceIndex).assign(force);

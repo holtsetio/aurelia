@@ -43,8 +43,7 @@ export class MedusaBellGeometry {
     static _createMaterial(physics, isOuterSide) {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         const material = new THREE.MeshPhysicalNodeMaterial({
-            //side: (isOuterSide ? THREE.DoubleSide : THREE.FrontSide),
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            roughness, metalness, transmission, iridescence, iridescenceIOR,
             opacity:0.7,
             transparent: true,
         });

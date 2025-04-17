@@ -4,16 +4,12 @@ import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 class Conf {
     gui = null;
 
-    roughness = 0.55;
+    roughness = 0.4;
     metalness = 0.2;
     transmission = 0.7;
     color = 0xffffff; //0xf4aaff;
     iridescence = 0.0;
-    iridescenceIOR = 1.5;
-    clearcoat = 0.0;
-    clearcoatRoughness = 0.3;
-    clearcoatColor = 0xFFFFFF;
-    normalMapScale = 0.1;
+    iridescenceIOR = 2.33;
 
     runSimulation = true;
     showVerletSprings = false;
@@ -37,8 +33,10 @@ class Conf {
         /*const settings = gui.addFolder({
             title: "settings",
             expanded: false,
-        });
-        settings.addBinding(this, "wireframe");*/
+        });*/
+        //settings.addBinding(this, "wireframe");
+        //settings.addBinding(this, "iridescence", { min: 0.01, max: 1.0, step: 0.01 });
+        //settings.addBinding(this, "iridescenceIOR", { min: 1.00, max: 2.33, step: 0.01 });
 
         this.gui = gui;
     }

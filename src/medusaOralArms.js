@@ -29,7 +29,7 @@ export class MedusaOralArms {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaOralArms.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.DoubleSide,
-            roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            roughness, metalness, transmission, color, iridescence, iridescenceIOR,
             opacity: 0.1,
             transparent: true,
         });
