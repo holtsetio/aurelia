@@ -1,8 +1,10 @@
 # Aurelia
 
-Realtime procedural jellyfish in the browser using three.js WebGPURenderer
+Realtime procedural jellyfish in the browser using three.js WebGPURenderer.
 
-![aurelia](https://github.com/user-attachments/assets/21b278f3-f42b-4b43-aa06-1ed5d734c949)
+See it running live [here](https://holtsetio.com/lab/aurelia/)!
+
+[![aurelia](https://github.com/user-attachments/assets/21b278f3-f42b-4b43-aa06-1ed5d734c949)](https://holtsetio.com/lab/aurelia/)
 
 ## Implementation details
 
