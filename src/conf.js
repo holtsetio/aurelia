@@ -4,7 +4,6 @@ import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 class Conf {
     gui = null;
 
-
     roughness = 0.55;
     metalness = 0.2;
     transmission = 0.7;
@@ -15,16 +14,6 @@ class Conf {
     clearcoatRoughness = 0.3;
     clearcoatColor = 0xFFFFFF;
     normalMapScale = 0.1;
-
-    lightSeed = 0;
-
-    animateLights = true;
-
-    bloom = true;
-    bloomStrength = 0.05;
-    bloomRadius = 0.4;
-    bloomThreshold = 0;
-
 
     runSimulation = true;
     showVerletSprings = false;

@@ -1,34 +1,21 @@
 import * as THREE from "three/webgpu";
 import {
     Fn,
-    attribute,
     varying,
     vec3,
-    transformNormalToView,
-    normalMap,
-    texture,
-    vec2,
-    If,
     uniform,
-    cos,
-    sin,
     billboarding,
     uv,
     instanceIndex,
-    cameraProjectionMatrix,
     cameraViewMatrix,
     positionLocal,
-    sign,
     time,
-    rand,
     vec4,
     float,
     uint,
-    int,
     cameraWorldMatrix,
-    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D, mrt
+    cameraFar, smoothstep, triNoise3D, mrt, mx_noise_vec3
 } from "three/tsl";
-import {mx_perlin_noise_vec3} from "three/src/nodes/materialx/lib/mx_noise";
 import {Background} from "./background";
 
 export const triple32 = /*#__PURE__*/ Fn( ( [ x_immutable ] ) => {
@@ -77,8 +64,7 @@ export class Plankton {
         this.material.vertexNode = Fn(() => {
             const id = instanceIndex.mul(4).add(1).toVar();
             const pos = vec3(hash(id), hash(id.add(1)), hash(id.add(2))).mul(this.uniforms.bounds).toVar();
-
-            const noise = mx_perlin_noise_vec3(vec3(pos.xy, time.mul(0.1))).mul(1.0);
+            const noise = mx_noise_vec3(vec3(pos.xy, time.mul(0.1))).toVar();
             pos.addAssign(noise);
             //const noisex = triNoise3D(pos.xyz, 0.1, time).sub(0.5);
             //const noisey = triNoise3D(pos.yzx, 0.1, time).sub(0.5);
@@ -109,7 +95,7 @@ export class Plankton {
         })();
 
         this.material.mrtNode = mrt( {
-            bloomIntensity: 0.2
+            bloomIntensity: 0.0
         } );
 
         const plane = new THREE.PlaneGeometry(0.1,0.1);

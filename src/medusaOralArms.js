@@ -43,10 +43,10 @@ export class MedusaOralArms {
             const side = attribute('sideData');
 
             const vertexIds = attribute('vertexIds');
-            const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
-            const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
-            const p2 = physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
-            const p3 = physics.positionData.buffer.element(vertexIds.w).xyz.toVar();
+            const p0 = physics.positionData.element(vertexIds.x).xyz.toVar();
+            const p1 = physics.positionData.element(vertexIds.y).xyz.toVar();
+            const p2 = physics.positionData.element(vertexIds.z).xyz.toVar();
+            const p3 = physics.positionData.element(vertexIds.w).xyz.toVar();
             const top = p0.add(p1).mul(0.5);
             const bottom = p2.add(p3).mul(0.5);
             const left = p0.add(p2).mul(0.5);
@@ -73,7 +73,7 @@ export class MedusaOralArms {
         const emissive = float().toVar("medusaOralArmsEmission");
         MedusaOralArms.material.colorNode = Fn(() => {
             const noise = triNoise3D(vec3(uv().mul(2.0), 1.34), 0.0, time).toVar(); //mx_perlin_noise_float(vUv.mul(6));
-            const white = vec3(1.0,1.0,1.0).sub(noise);
+            const white = vec3(0.85,0.85,1.0).sub(noise);
             const orange = vec3(1,0.5,0.1).sub(noise);
             const red = vec3(1,0.2,0.1).sub(noise);
 

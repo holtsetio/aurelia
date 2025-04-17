@@ -1,6 +1,5 @@
 import * as THREE from "three/webgpu";
-import {cos, float, Fn, instanceIndex, mix, sin, vec3, uniform, If, uniformArray, mat4, abs} from "three/tsl";
-import { WgpuBuffer } from "./common/WgpuBuffer"
+import { Fn, instanceIndex, uniform, If, uniformArray, abs, instancedArray } from "three/tsl";
 import {getBellPosition} from "./medusaBellFormula";
 
 export class MedusaVerletBridge {
@@ -10,7 +9,7 @@ export class MedusaVerletBridge {
 
     isBaked = false;
 
-    vertexQueue = [];
+    vertices = [];
 
     uniforms = {};
 
@@ -31,13 +30,14 @@ export class MedusaVerletBridge {
             console.error("Can't add any more vertices!");
         }
         const { id } = vertex;
-        this.vertexQueue.push({ id, medusaId, zenith, azimuth, isBottom, offset, directionalOffset, fixed });
+        this.vertices.push({ id, medusaId, zenith, azimuth, isBottom, offset, directionalOffset, fixed });
     }
 
     async bake() {
         this.medusaCount = this.medusae.length;
+        this.vertexCount = this.vertices.length;
 
-        this.vertexQueue = this.vertexQueue.sort((x, y) => {
+        this.vertices = this.vertices.sort((x, y) => {
             if (x.fixed === y.fixed) {
                 const id0 = x.medusaId;
                 const id1 = y.medusaId;
@@ -51,83 +51,71 @@ export class MedusaVerletBridge {
             else if (f0 > f1) { return 1; }
             return 0;
         });
-        this.fixedNum = this.vertexQueue.findIndex(v => !v.fixed);
+        this.fixedNum = this.vertices.findIndex(v => !v.fixed);
         this.medusaePtr = [];
         let ptr = this.fixedNum;
         for (let i = 0; i < this.medusaCount; i++) {
-            const count = (i === this.medusaCount - 1 ? this.vertexQueue.length : this.vertexQueue.findIndex(v => !v.fixed && v.medusaId === i + 1)) - ptr;
+            const count = (i === this.medusaCount - 1 ? this.vertices.length : this.vertices.findIndex(v => !v.fixed && v.medusaId === i + 1)) - ptr;
             this.medusaePtr[i] = { ptr, count };
             ptr += count;
         }
 
-        this.vertexCount = this.vertexQueue.length;
-        this.vertexIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "vertexId", true);
-        this.medusaIdData = new WgpuBuffer(this.vertexCount, 'uint', 1, Uint32Array, "medusaId", true);
-        this.paramsData = new WgpuBuffer(this.vertexCount, 'vec3', 3, Float32Array, "params", true); // x: zenith, y: azimuth, z: isBottom
-        this.offsetData = new WgpuBuffer(this.vertexCount, 'vec4', 4, Float32Array, "offset", true); //xyz: offset, w: directionalOffset
+        const idArray = new Uint32Array(this.vertexCount * 2); // x: vertex Id, y: medusa Id
+        const paramsArray = new Float32Array(this.vertexCount * 3); // x: zenith, y: azimuth, z: isBottom
+        const offsetArray = new Float32Array(this.vertexCount * 4); //xyz: offset, w: directionalOffset
+        this.vertices.forEach((v, index) => {
+            const { id, medusaId, zenith, azimuth, isBottom, offset, directionalOffset } = v;
+            idArray[index * 2 + 0] = id;
+            idArray[index * 2 + 1] = medusaId;
+            paramsArray[index * 3 + 0] = zenith;
+            paramsArray[index * 3 + 1] = azimuth;
+            paramsArray[index * 3 + 2] = isBottom ? 1 : 0;
+            offsetArray[index * 4 + 0] = offset.x;
+            offsetArray[index * 4 + 1] = offset.y;
+            offsetArray[index * 4 + 2] = offset.z;
+            offsetArray[index * 4 + 3] = directionalOffset;
+        });
+        this.idData = instancedArray(idArray, "uvec2");
+        this.paramsData = instancedArray(paramsArray, 'vec3');
+        this.offsetData = instancedArray(offsetArray, 'vec4');
+
         this.medusaTransformData = uniformArray(new Array(this.medusaCount).fill(0).map(() => { return new THREE.Matrix4(); }));
         this.medusaPhaseData = uniformArray(new Array(this.medusaCount).fill(0));
-
+        this.uniforms.vertexStart = uniform(0, "uint");
+        this.uniforms.vertexCount = uniform(this.vertexCount, "uint");
         this.medusae.forEach((medusa, index) => {
             const matrix = medusa.transformationObject.matrix;
             this.medusaTransformData.array[index].copy(matrix);
         });
 
 
-        this.uniforms.vertexStart = uniform(0, "uint");
-        this.uniforms.vertexCount = uniform(this.vertexCount, "uint");
-
-        this.vertexQueue.forEach((v, index) => {
-            const { id, medusaId, zenith, azimuth, isBottom, offset, directionalOffset } = v;
-            this.vertexIdData.array[index] = id;
-            this.medusaIdData.array[index] = medusaId;
-            this.paramsData.array[index * 3 + 0] = zenith;
-            this.paramsData.array[index * 3 + 1] = azimuth;
-            this.paramsData.array[index * 3 + 2] = isBottom ? 1 : 0;
-            this.offsetData.array[index * 4 + 0] = offset.x;
-            this.offsetData.array[index * 4 + 1] = offset.y;
-            this.offsetData.array[index * 4 + 2] = offset.z;
-            this.offsetData.array[index * 4 + 3] = directionalOffset;
-
-        });
-
         console.time("compileBridge");
         this.updatePositionsKernel = Fn(()=>{
             const id = this.uniforms.vertexStart.add(instanceIndex);
             If(instanceIndex.lessThan(this.uniforms.vertexCount), () => {
-                const medusaId = this.medusaIdData.buffer.element(id);
+                const vertexId = this.idData.element(id).x;
+                const medusaId = this.idData.element(id).y;
+                const offset = this.offsetData.element(id).xyz.toVar();
+                const directionalOffset = this.offsetData.element(id).w;
+                const params = this.paramsData.element(id);
                 const medusaTransform = this.medusaTransformData.element(medusaId);
-
                 const phase = this.medusaPhaseData.element(medusaId);
-                const vertexId = this.vertexIdData.buffer.element(id);
-                const params = this.paramsData.buffer.element(id);
                 const zenith = params.x;
                 const azimuth = params.y;
                 const bottomFactor = params.z;
 
                 const position = getBellPosition(phase, zenith, azimuth, bottomFactor).toVar();
 
-                const offset = this.offsetData.buffer.element(id).xyz.toVar();
-                const directionalOffset = this.offsetData.buffer.element(id).w;
                 If(abs(directionalOffset).greaterThan(0.0), () => {
                     const p1 = getBellPosition(phase, zenith.add(0.001), azimuth, bottomFactor);
                     const dir = p1.sub(position).normalize();
                     offset.assign(dir.mul(directionalOffset));
                 });
                 const result = medusaTransform.mul(position.add(offset)).xyz;
-                this.physics.positionData.buffer.element(vertexId).xyz.assign(result);
+                this.physics.positionData.element(vertexId).xyz.assign(result);
             });
         })().compute(this.vertexCount);
         await this.updateAll();
-        //console.timeEnd("compileBridge");
-
-/*        const resetForcesKernel = Fn(()=>{
-            const id = this.uniforms.vertexStart.add(instanceIndex);
-            If(instanceIndex.lessThan(this.uniforms.vertexCount), () => {
-                const vertexId = this.vertexIdData.buffer.element(id);
-                this.physics.forceData.buffer.element(vertexId).xyz.assign(vec3(0,0,0));
-            });
-        })().compute(this.vertexCount);*/
 
         this.isBaked = true;
     }

@@ -4,29 +4,12 @@ import {
     attribute,
     varying,
     vec3,
-    transformNormalToView,
-    normalMap,
-    texture,
-    vec2,
-    If,
     uniform,
-    cos,
     sin,
-    billboarding,
-    uv,
     instanceIndex,
-    cameraProjectionMatrix,
-    cameraViewMatrix,
-    positionLocal,
-    sign,
-    time,
-    rand,
     vec4,
     float,
-    uint,
-    int,
-    cameraWorldMatrix,
-    cameraFar, positionView, smoothstep, cameraPosition, triNoise3D, cross, mat4, dot, uniformArray, atan, mrt
+    positionView, smoothstep, cameraPosition, cross, uniformArray, atan, mrt
 } from "three/tsl";
 import {Background} from "./background";
 import {getBellPosition} from "./medusaBellFormula";

@@ -1,4 +1,3 @@
-import * as THREE from "three/webgpu";
 import {
     Fn,
     vec3,
@@ -6,15 +5,11 @@ import {
     positionWorld,
     cameraPosition,
     float,
-    acos,
     normalWorld,
-    rand,
     time,
     sin,
     dot,
     positionView,
-    mx_worley_noise_float,
-    reflectVector,
     triNoise3D,
     min,
     smoothstep,
@@ -22,18 +17,10 @@ import {
     mod,
     mat3,
     If,
-    cameraViewMatrix,
-    vec4,
-    cameraFar,
-    cameraNear,
-    renderGroup,
     uniform,
-    cross,
     Loop,
-    mx_noise_float,
     mix
 } from "three/tsl";
-import {mx_perlin_noise_float} from "three/src/nodes/materialx/lib/mx_noise";
 import {Lights} from "./lights";
 
 const hash23 = /*@__PURE__*/ Fn( ( [ uv ] ) => {
@@ -55,8 +42,7 @@ export class Background {
         const factor = 0.005;
         p.mulAssign(factor);
         uvRay.mulAssign(factor);
-        Loop(5, ({i}) => {
-            //const noise = mx_perlin_noise_float(vec3(p.xz.mul(0.5), time.mul(0.3))).mul(0.5).add(0.5);
+        Loop(5, () => {
             const noise = triNoise3D(p, 0.2, time);
             value.addAssign(noise);
             p.addAssign(uvRay);
@@ -76,7 +62,6 @@ export class Background {
     static getFog = Fn(() => {
         const projectedZ = positionView.z.mul(-1);
         const fog = smoothstep(Background.fogNear, Background.fogFar, projectedZ).oneMinus();
-        //fog.mulAssign(smoothstep(3, 6, projectedZ));
         return fog;
     })().toVar("fog");
 

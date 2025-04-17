@@ -79,7 +79,6 @@ export class MedusaBellTop {
             return vertexRows[subdivisions + row][face * subdivisions + (subdivisions - row) + index].ptr;
         }
 
-
         {
             const [v0,v1,v2,v3,v4] = vertexRows[1];
             geometryOutside.addFace(v0.ptr, v1.ptr, v2.ptr);

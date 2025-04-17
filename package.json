@@ -1,28 +1,21 @@
 {
-  "name": "webgpu",
+  "name": "aurelia",
+  "private": true,
   "version": "0.0.1",
-  "description": "",
-  "browserslist": "> 0.5%, last 2 versions, not dead",
+  "type": "module",
   "scripts": {
-    "start": "parcel src/index.html --open",
-    "build": "parcel build src/index.html --public-url ./ --reporter @parcel/reporter-bundle-analyzer"
-  },
-  "dependencies": {
-    "@tweakpane/plugin-essentials": "^0.2.1",
-    "simplex-noise": "^4.0.3",
-    "three": "0.x",
-    "tweakpane": "^4.0.5",
-    "tweakpane-plugin-infodump": "^4.0.2"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "@parcel/reporter-bundle-analyzer": "^2.13.3",
-    "@parcel/transformer-glsl": "^2.13.3",
-    "@parcel/transformer-sass": "^2.13.3",
-    "parcel": "^2.13.3"
+    "vite": "^6.3.1"
   },
-  "keywords": [],
-  "alias": {
-    "three/webgpu": "three/src/Three.WebGPU.js",
-    "three/tsl": "three/src/Three.TSL.js"
+  "dependencies": {
+    "three": "^0.175.0",
+	"@tweakpane/plugin-essentials": "^0.2.1",
+    "simplex-noise": "^4.0.3",
+    "tweakpane": "^4.0.5",
+    "tweakpane-plugin-infodump": "^4.0.2"
   }
 }

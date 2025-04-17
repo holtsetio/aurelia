@@ -5,12 +5,8 @@ import {
     varying,
     vec3,
     transformNormalToView,
-    normalMap,
-    texture,
-    vec2,
-    uint,
     int, mrt,
-    If, float, uv, uniform, vec4, positionLocal, cameraPosition, cross, smoothstep
+    If, float, vec4, cameraPosition, cross, smoothstep
 } from "three/tsl";
 
 import {Medusa} from "./medusa";
@@ -75,10 +71,10 @@ export class MedusaBellGeometry {
                 tangent.assign(p0.sub(position));
                 bitangent.assign(p1.sub(position));
             }).Else(() => {
-                const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
-                const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
-                const p2 = physics.positionData.buffer.element(vertexIds.z).xyz.toVar();
-                const p3 = physics.positionData.buffer.element(vertexIds.w).xyz.toVar();
+                const p0 = physics.positionData.element(vertexIds.x).xyz.toVar();
+                const p1 = physics.positionData.element(vertexIds.y).xyz.toVar();
+                const p2 = physics.positionData.element(vertexIds.z).xyz.toVar();
+                const p3 = physics.positionData.element(vertexIds.w).xyz.toVar();
                 const top = p0.add(p1).mul(0.5);
                 const bottom = p2.add(p3).mul(0.5);
                 const left = p0.add(p2).mul(0.5);
@@ -118,14 +114,12 @@ export class MedusaBellGeometry {
         material.colorNode = MedusaBellPattern.colorNode;
         material.emissiveNode = MedusaBellPattern.emissiveNode;
         material.metalnessNode = Fn(() => {
-            const metalness = float().toVar("medusaMetalness");
-            return metalness.mul(0.5).add(0.25);
+            return MedusaBellPattern.metalness.mul(0.5).add(0.25);
         })()
 
         material.opacityNode = Fn(() => {
-            const metalness = float().toVar("medusaMetalness");
             const fog = Background.getFog;
-            return metalness.mul(0.4).add(0.4).add(vEmissive.mul(0.5)).mul(fog);
+            return MedusaBellPattern.metalness.mul(0.4).add(0.4).add(vEmissive.mul(0.5)).mul(fog);
         })();
 
         material.mrtNode = mrt( {
@@ -193,7 +187,6 @@ export class MedusaBellGeometry {
         const vertexIdBuffer =  new THREE.BufferAttribute(new Int32Array(this.vertexIdArray), 4, false);
         const zenithBuffer =  new THREE.BufferAttribute(new Float32Array(this.zenithArray), 1, false);
         const azimuthBuffer =  new THREE.BufferAttribute(new Float32Array(this.azimuthArray), 1, false);
-        //const bottomFactorBuffer =  new THREE.BufferAttribute(new Float32Array(this.bottomFactorArray), 1, false);
         const sideBuffer =  new THREE.BufferAttribute(new Float32Array(this.sideArray), 4, false);
         const uvBuffer =  new THREE.BufferAttribute(new Float32Array(this.uvArray), 2, false);
         const geometry = new THREE.BufferGeometry();

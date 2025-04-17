@@ -1,4 +1,3 @@
-import * as THREE from "three/webgpu";
 import {
     Fn,
     If,
@@ -22,12 +21,13 @@ import {
     cross,
     dFdx, dFdy, positionView, normalView
 } from "three/tsl";
-import {mx_perlin_noise_float} from "three/src/nodes/materialx/lib/mx_noise";
 import {Medusa} from "./medusa";
-import {MedusaBellGeometry} from './medusaBellGeometry';
 
 export class MedusaBellPattern {
     static createColorNode() {
+        MedusaBellPattern.metalness = float(0).toVar("medusaMetalness")
+        MedusaBellPattern.emissiveness = vec3(0).toVar("medusaEmissiveness")
+
         const pattern = () => {
             const result = vec3(1).toVar();
             const vUv = uv().mul(0.8);
@@ -112,29 +112,21 @@ export class MedusaBellPattern {
             //const noise = mx_perlin_noise_float(uv().mul(8)).mul(0.5).add(0.5);
             //value.addAssign(noise.mul(0.5));
 
-            const metalness = float(value.x).oneMinus().toVar("medusaMetalness");
-            const emissiveness = red.mul(value.y.oneMinus()).mul(sin(Medusa.uniforms.phase.add(positionLocal.y)).mul(0.5).add(0.5).pow(10).mul(2)).toVar("medusaEmissiveness");
-            emissiveness.addAssign(red.mul(value.y.mul(0.105)));
+            MedusaBellPattern.metalness.assign(float(value.x).oneMinus());
+            MedusaBellPattern.emissiveness.assign(red.mul(value.y.oneMinus()).mul(sin(Medusa.uniforms.phase.add(positionLocal.y)).mul(0.5).add(0.5).pow(10).mul(2)));
+            MedusaBellPattern.emissiveness.addAssign(red.mul(value.y.mul(0.105)));
 
             const color = mix(orange,white,value.x).toVar("fragmentColor");
             color.assign(mix(red, color, value.y));
 
-            emissiveness.addAssign(vec3(0,0,1).mul(Medusa.uniforms.charge.mul(0.3)));
+            MedusaBellPattern.emissiveness.addAssign(vec3(0,0,1).mul(Medusa.uniforms.charge.mul(0.3)));
 
             /*** inner glow **/
-            emissiveness.addAssign(orange.mul(vEmissive));
+            MedusaBellPattern.emissiveness.addAssign(orange.mul(vEmissive));
 
             return color;
         })();
 
-        MedusaBellPattern.emissiveNode = Fn(() => {
-            return vec3().toVar("medusaEmissiveness"); //.add(vec3(1,0.5,0.1).mul(0.05));
-            const color = vec3().toVar("DiffuseColor");
-            const projectedMousePos = cameraPosition.add(Medusa.uniforms.mouseRay.mul(cameraPosition.distance(positionWorld)));
-            const delta = positionWorld.sub(projectedMousePos).toVar();
-            const noise = triNoise3D(positionWorld.xyz.mul(0.1), 0.2, time).mul(3); //mx_perlin_noise_float(positionWorld).mul(0.5).add(0.5);
-            const factor = delta.length().oneMinus().mul(noise).max(0.0).pow(2.0);
-            return color.mul(factor);
-        })();
+        MedusaBellPattern.emissiveNode = MedusaBellPattern.emissiveness;
     }
 }

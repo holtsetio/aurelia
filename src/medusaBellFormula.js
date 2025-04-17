@@ -1,11 +1,5 @@
 import {cos, float, mix, sin, vec3, vec2, time, smoothstep, triNoise3D} from "three/tsl";
-import {mx_perlin_noise_float, mx_perlin_noise_vec3} from "three/src/nodes/materialx/lib/mx_noise";
 
-/*const noisePosX = Math.sin(azimuth) * 3;
-            const noisePosY = Math.cos(azimuth) * 3;
-            //zenith *= 0.90 + noise3D(noiseSeed, noisePosX, noisePosY) * 0.05;
-
- */
 export const getBellPosition = (phase, zenith, azimuth, bottomFactor = 0) => {
     const sinAzimuth = sin(azimuth).toVar();
     const cosAzimuth = cos(azimuth).toVar();
@@ -50,10 +44,3 @@ export const getBellPosition = (phase, zenith, azimuth, bottomFactor = 0) => {
         { name: 'bottomFactor', type: 'float' },
     ]
 } );*/
-
-export const getGutPosition = (time, t, angle) => {
-    const rim = getBellPosition(time, float(1.0), angle);
-    const planePos = mix(rim.xyz, vec3(0.0, rim.y, 0.0), float(1.0).sub(t));
-    const bellPos = getBellPosition(time,t,angle);
-    return mix(planePos, bellPos, 0.95);
-};

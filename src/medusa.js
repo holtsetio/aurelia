@@ -1,14 +1,12 @@
 import * as THREE from "three/webgpu";
 import { uniform } from "three/tsl";
 
-import {noise2D, noise3D} from "../testApp/common/noise";
+import {noise2D, noise3D} from "./common/noise";
 
 import {MedusaTentacles} from "./medusaTentacles";
 import {MedusaBell} from "./medusaBell";
-import {MedusaGut} from "./medusaGut";
 import {conf} from "./conf";
 import {MedusaOralArms} from "./medusaOralArms";
-import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
 import {MedusaBellGeometry} from "./medusaBellGeometry";
 import {MedusaBellPattern} from "./medusaBellPattern";
 
@@ -50,7 +48,6 @@ export class Medusa {
         this.bell = new MedusaBell(this);
         this.tentacles = new MedusaTentacles(this);
         this.arms = new MedusaOralArms(this);
-        //this.gut = new MedusaGut(this);
 
         this.bell.createGeometry();
         this.tentacles.createGeometry();
@@ -60,15 +57,9 @@ export class Medusa {
         this.object.add(this.bell.object);
         this.object.add(this.tentacles.object);
         this.object.add(this.arms.object);
-
-        //this.ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5,5), new THREE.MeshPhysicalNodeMaterial({ color: new THREE.Color(1,0.5,0), emissive: new THREE.Color(1,0.5,0).multiplyScalar(0.5) }));
-        //this.transformationObject.add(this.ball);
-
     }
 
-    async bake() {
-        //return await this.bridge.bake();
-    }
+    async bake() { }
 
     updatePosition(delta, elapsed) {
         const time = this.time * 0.1;
@@ -104,23 +95,7 @@ export class Medusa {
     }
 
 
-    /*static colorMap;
-    static normalMap;
-    static aoMap;*/
     static async initStatic(physics) {
-        /*const textureLoader = new THREE.TextureLoader();
-        const loadTexture = (file) => {
-            return new Promise(resolve => {
-                textureLoader.load(file, texture => {
-                    texture.wrapS = THREE.RepeatWrapping;
-                    texture.wrapT = THREE.RepeatWrapping;
-                    resolve(texture);
-                });
-            });
-        }
-        Medusa.normalMap = await loadTexture(normalMapFile);
-        Medusa.colorMap = await loadTexture(colorMapFile);*/
-
         Medusa.uniforms.matrix = uniform(new THREE.Matrix4());
         Medusa.uniforms.phase = uniform(0);
         Medusa.uniforms.charge = uniform(0);
@@ -129,31 +104,11 @@ export class Medusa {
         MedusaBellGeometry.createMaterial(physics);
         MedusaTentacles.createMaterial(physics);
         MedusaOralArms.createMaterial(physics);
-        //MedusaGut.createMaterial(physics);
-
-        //MedusaTentacleHighlights.createMaterial(physics);
 
     }
 
-    static setMouseRay(ray) {
-        //Medusa.uniforms.mouseRay.value.copy(ray);
-    };
+    static setMouseRay(ray) { }
 
-    static updateStatic() {
-        const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness, clearcoatColor, normalMapScale } = conf;
-        const materials = [MedusaBellGeometry.material, MedusaTentacles.material, MedusaOralArms.material];
-        /*materials.forEach((material) => {
-           material.roughness = roughness;
-           material.metalness = metalness;
-           material.transmission = transmission;
-           material.color.setHex(color);
-           material.iridescence = iridescence;
-           material.iridescenceIOR = iridescenceIOR;
-           material.clearcoat = clearcoat;
-           material.clearcoatRoughness = clearcoatRoughness;
-           //material.clearcoatColor.setHex(clearcoatColor);
-        });*/
-        //Medusa.uniforms.normalMapScale.value.set(normalMapScale, -normalMapScale);
-    }
+    static updateStatic() { }
 
 }

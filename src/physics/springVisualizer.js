@@ -16,9 +16,9 @@ export class SpringVisualizer {
 
         this.material = new THREE.LineBasicNodeMaterial();
         this.material.positionNode = Fn( () => {
-            const vertices = this.physics.springVertexData.buffer.element(instanceIndex);
+            const vertices = this.physics.springVertexData.element(instanceIndex);
             const ptr = select(this.vertexIndexAttribute.equal(0), vertices.x, vertices.y);
-            return this.physics.positionData.buffer.element(ptr).xyz;
+            return this.physics.positionData.element(ptr).xyz;
         } )();
         this.material.mrtNode = mrt( {
             bloomIntensity: 0

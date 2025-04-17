@@ -9,7 +9,6 @@ import {
 } from "three/tsl";
 
 import {conf} from "./conf";
-import {MedusaTentacleHighlights} from "./medusaTentacleHighlights";
 import {Medusa} from "./medusa";
 import {Background} from "./background";
 
@@ -19,14 +18,14 @@ export class MedusaTentacles {
 
     constructor(medusa) {
         this.medusa = medusa;
-        this.highlights = new MedusaTentacleHighlights(medusa);
     }
 
     static createMaterial(physics) {
         const { roughness, metalness, transmission, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness } = conf;
         MedusaTentacles.material = new THREE.MeshPhysicalNodeMaterial({
             //side: THREE.Single,
-            roughness, metalness, color, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            roughness, metalness, iridescence, iridescenceIOR, clearcoat, clearcoatRoughness,
+            color: 0xddddff,
             opacity: 0.2,
             transparent: true,
         });
@@ -36,8 +35,8 @@ export class MedusaTentacles {
             const vertexIds = attribute('vertexIds');
             const angle = attribute('angle');
             const width = attribute('width');
-            const p0 = physics.positionData.buffer.element(vertexIds.x).xyz.toVar();
-            const p1 = physics.positionData.buffer.element(vertexIds.y).xyz.toVar();
+            const p0 = physics.positionData.element(vertexIds.x).xyz.toVar();
+            const p1 = physics.positionData.element(vertexIds.y).xyz.toVar();
             const tangent = p1.sub(p0);
             const bitangent = tangent.cross(vec3(1,0,0)).normalize();
             const bitangent2 = tangent.cross(bitangent).normalize();
@@ -57,7 +56,7 @@ export class MedusaTentacles {
         })();
         MedusaTentacles.material.opacityNode = Fn(() => {
             const fog = Background.getFog;
-            return float(0.2).mul(fog);
+            return float(0.5).mul(fog);
         })();
         MedusaTentacles.material.mrtNode = mrt( {
             bloomIntensity: Background.getFog
@@ -123,7 +122,7 @@ export class MedusaTentacles {
         };
 
         const tentacleRadialSegments = 6;
-        const tentacleRadius = 0.02;
+        const tentacleRadius = 0.015;
         for (let i = 0; i < tentacleNum; i++) {
             const tentacleVerticeRows = [];
             for (let y = 1; y < tentacleLength; y++) {
@@ -171,7 +170,5 @@ export class MedusaTentacles {
             Medusa.uniforms.charge.value = this.medusa.charge;
         }
 
-        //this.highlights.createGeometry();
-        //this.object.add(this.highlights.object);
     }
 }

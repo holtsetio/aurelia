@@ -11,7 +11,7 @@ export class VertexVisualizer {
         this.count = physics.vertexCount;
         this.material = new THREE.SpriteNodeMaterial();
         this.material.positionNode = Fn(() => {
-            return this.physics.positionData.buffer.element(instanceIndex);
+            return this.physics.positionData.element(instanceIndex);
         })();
         this.object = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), this.material);
         this.object.count = this.count;
