@@ -23,6 +23,7 @@ export class Info {
             view: "infodump",
             content: "Completely procedural jellyfish, with verlet physics and fake volumetric lighting. Rendered in WebGPU using [ThreeJS](https://threejs.org) TSL.\n\n" +
                 "Fake caustics based on this [shadertoy](https://www.shadertoy.com/view/MdKXDm) by Dave Hoskins.\n\n" +
+                "View the source code [here](https://github.com/holtsetio/aurelia/)!\n\n" +
                 "[> Other experiments](https://holtsetio.com)",
             markdown: true,
         })
