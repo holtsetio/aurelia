@@ -15,3 +15,13 @@ The bell is formed by a sinusoidally contracting hemisphere, while the bell seam
 npm install
 npm run dev
 ```
+
+## Standing on the shoulders of giants
+
+A lot of great creative jellyfish demos have inspired this, namely:
+
+[Chrysaora](https://akirodic.com/p/jellyfish/) by [Aki Rodic](https://akirodic.com/)
+
+[Particulate Medusae](https://github.com/milcktoast/particulate-medusae) by [Ash Weeks](https://github.com/milcktoast)
+
+[Luminescence](https://www.shadertoy.com/view/4sXBRn) by BigWings
