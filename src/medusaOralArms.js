@@ -4,6 +4,7 @@ import {
     attribute,
     varying,
     vec3,
+    vec4,
     transformNormalToView,
     normalMap,
     texture,
@@ -95,7 +96,11 @@ export class MedusaOralArms {
         })();
 
         MedusaOralArms.material.mrtNode = mrt( {
-            bloomIntensity: Background.getFog
+            bloomIntensity: Fn(() => {
+                const glowIntensity = Background.getFog * (1.0 + Medusa.uniforms.charge * 2);
+                const charge = Medusa.uniforms.charge;
+                return vec4(glowIntensity, charge, 0, 1);
+            })()
         } );
 
         //MedusaOralArms.material.normalNode = vNormal.normalize();

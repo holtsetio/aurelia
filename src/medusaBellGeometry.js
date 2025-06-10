@@ -122,7 +122,11 @@ export class MedusaBellGeometry {
         })();
 
         material.mrtNode = mrt( {
-            bloomIntensity: Background.getFog
+            bloomIntensity: Fn(() => {
+                const glowIntensity = Background.getFog * (1.0 + Medusa.uniforms.charge * 2);
+                const charge = Medusa.uniforms.charge;
+                return vec4(glowIntensity, charge, 0, 1);
+            })()
         } );
 
         return material;

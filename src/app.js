@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { pass, mrt, output, float, vec4 } from "three/tsl";
+import {pass, mrt, output, float, vec4, Fn, clamp, vec3} from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls";
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 
@@ -120,13 +120,26 @@ class App {
         } ) );
 
         const outputPass = scenePass.getTextureNode();
-        const bloomIntensityPass = vec4(scenePass.getTextureNode( 'bloomIntensity' ).rgb, 1);
+        const bloomIntensityPass = scenePass.getTextureNode( 'bloomIntensity' );
 
-        const bloomPass = bloom( outputPass.mul( bloomIntensityPass ) );
+        const bloomPass = bloom(Fn(() => {
+            const bloomIntensity = bloomIntensityPass.r;
+            const charge = bloomIntensityPass.g;
+            const colorMask = vec3(1.0 - charge * 0.5, 1.0 - charge, 1.0);
+
+            return vec4(outputPass.rgb * bloomIntensity * colorMask, 1);
+        })());
 
         const postProcessing = new THREE.PostProcessing(this.renderer);
         postProcessing.outputColorTransform = false;
-        postProcessing.outputNode = vec4(outputPass.rgb, 1).add( vec4(bloomPass.mul(bloomIntensityPass.sign().oneMinus()).rgb, 0.0) ).renderOutput();
+        postProcessing.outputNode = Fn(() => {
+            const bloomIntensity = bloomIntensityPass.r;
+            const charge = bloomIntensityPass.g;
+
+            const bloomMask = (1.0 - clamp(bloomIntensity, 0, 1)) + charge;
+            const finalBloom = bloomPass.rgb * clamp(bloomMask, 0, 1);
+            return vec4(outputPass.rgb + finalBloom.rgb, 1.0).renderOutput();
+        })();
 
         this.postProcessing = postProcessing;
         this.bloomPass = bloomPass;
